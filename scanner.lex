@@ -5,10 +5,17 @@
 
 %option yylineno
 %option noyywrap
+
 digit   		  ([1-9])
 letter  		  ([a-zA-Z])
 whitespace	  ([\t\n\r ])
+hex             (\\x[0-7][0-9A-Fa-f])
+escapechars     ([\\"nrt0])
+
+
+
 %x PARENTHESIS
+
 %%
 void return VOID;
 int return INT;
@@ -33,15 +40,16 @@ continue return CONTINUE;
 (\}) return RBRACE;
 (\=) return ASSIGN;
 (==|!=|<=|=>|<|>) return RELOP;
-(\+|-|\*|\/) return RELOP;
+(\+|\-|\*|\/) return BINOP;
 \/\/([^\n\r])* return COMMENT;
 ({letter})+(({digit}|{letter}))* return ID;
 (0|{digit}([0-9])*) return NUM;
 (\") BEGIN(PARENTHESIS);
 <PARENTHESIS>(\n) return STRING_LINE_ERROR;
-<PARENTHESIS>([^\\(")\r\n])*(\") {return STRING; BEGIN(INITIAL);}
+<PARENTHESIS>\\{escapechars} 
+
+<PARENTHESIS>([^\\(\")\r\n])*(\") return STRING;
 {whitespace}
 . return CHAR_ERROR;
-
 
 %%

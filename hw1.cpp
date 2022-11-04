@@ -1,7 +1,14 @@
-#include "tokens.hpp"
+#include "tokens.h"
 #include <iostream>
 #include <string>
 using namespace std;
+
+void printString(string str)
+{
+
+}
+
+
 
 int main()
 {
@@ -34,8 +41,10 @@ int main()
 		"COMMENT",
 		"ID",
 		"NUM",
-		"STRING"
-
+		"STRING",
+        "CHAR_ERROR",
+        "STRING_LINE_ERROR",
+        "STRING_ESCAPE_ERROR"
 	};
 
 	int token;
@@ -43,16 +52,17 @@ int main()
 	{
 		switch (token)
 		{
-
 		case CHAR_ERROR:
 			cout << "Error " << yytext << std::endl;
-			return 0;
+            exit(0);
 		case STRING_LINE_ERROR:
 			cout << "Error unclosed string\\n"<<std::endl;
 			return 0;
 		case STRING:
 			cout << yylineno << " " << (tokens[token - 1]) << " " << yytext << std::endl;
-		default:
+        case COMMENT:
+            cout << yylineno << " " << (tokens[token - 1]) << " " << "//" << std::endl;
+        default:
 			cout << yylineno << " " << (tokens[token - 1]) << " " << (((string)yytext).substr(0, ((string)yytext).size()-1)) << std::endl;
 			break;
 		}
