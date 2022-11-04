@@ -33,7 +33,8 @@ enum tokentype
     STRING = 29,
     CHAR_ERROR=30,
     STRING_LINE_ERROR=31,
-    STRING_ESCAPE_ERROR=32
+    STRING_ESCAPE_ERROR=32,
+    STRING_ESCAPE_ERROR_HEX=33
 };
 
 extern int yylineno;

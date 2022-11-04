@@ -46,9 +46,10 @@ continue return CONTINUE;
 (0|{digit}([0-9])*) return NUM;
 (\") BEGIN(PARENTHESIS);
 <PARENTHESIS>(\n) return STRING_LINE_ERROR;
-<PARENTHESIS>\\{escapechars} 
-
-<PARENTHESIS>([^\\(\")\r\n])*(\") return STRING;
+<PARENTHESIS>(.)*(\\)[^n(\")rt0(\\)] return STRING_ESCAPE_ERROR;
+<PARENTHESIS>((\\\\)|(\\n)|(\\t)|(\\r)|(\\\")|(\\0)|{hex}|{letter}|[^(\\)\n\r])*(\") {BEGIN(INITIAL);return STRING;}
+<PARENTHESIS>(.)*(\\)((x[^01234567].)|(x[0-7][^0123456789abcdefABCDEF])|(x(\"))) return STRING_ESCAPE_ERROR_HEX;
+<PARENTHESIS>. return STRING_LINE_ERROR;
 {whitespace}
 . return CHAR_ERROR;
 
