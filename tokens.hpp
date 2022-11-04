@@ -16,7 +16,7 @@ enum tokentype
     IF = 12,
     ELSE = 13,
     WHILE = 14,
-    BREAK = 15,
+    BREAK =    15,
     CONTINUE = 16,
     SC = 17,
     COMMA = 18,

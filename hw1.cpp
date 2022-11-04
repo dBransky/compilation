@@ -109,8 +109,7 @@ int main()
 			break;
 		case COMMENT:
 			std::cout << yylineno << " "
-					  << "COMMENT"
-					  << " " << yytext << std::endl;
+					  << "COMMENT " << ((string(yytext)).substr(0, 2)) << std::endl;
 			break;
 		default:
 			std::cout << yylineno << " " << (tokens[token - 1]) << " " << yytext << std::endl;
