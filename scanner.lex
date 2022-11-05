@@ -7,6 +7,7 @@
 %option noyywrap
 
 digit   		  ([1-9])
+digit_zero   		  ([0-9])
 letter  		  ([a-zA-Z])
 whitespace	  ([\t\n\r ])
 hex             (\\x[0-7][0-9A-Fa-f])
@@ -17,6 +18,7 @@ escapechars     ([\\"nrt0])
 %x PARENTHESIS
 
 %%
+not return NOT;
 void return VOID;
 int return INT;
 byte return BYTE;
@@ -39,16 +41,16 @@ continue return CONTINUE;
 (\{) return LBRACE;
 (\}) return RBRACE;
 (\=) return ASSIGN;
-(==|!=|<=|=>|<|>) return RELOP;
+(==|!=|<=|>=|<|>) return RELOP;
 (\+|\-|\*|\/) return BINOP;
 \/\/([^\n\r])* return COMMENT;
-({letter})+(({digit}|{letter}))* return ID;
+({letter})+(({digit_zero}|{letter}))* return ID;
 (0|{digit}([0-9])*) return NUM;
 (\") BEGIN(PARENTHESIS);
 <PARENTHESIS>(\n) return STRING_LINE_ERROR;
-<PARENTHESIS>(.)*(\\)[^n(\")rt0(\\)] return STRING_ESCAPE_ERROR;
-<PARENTHESIS>((\\\\)|(\\n)|(\\t)|(\\r)|(\\\")|(\\0)|{hex}|{letter}|[^(\\)\n\r])*(\") {BEGIN(INITIAL);return STRING;}
-<PARENTHESIS>(.)*(\\)((x[^01234567].)|(x[0-7][^0123456789abcdefABCDEF])|(x(\"))) return STRING_ESCAPE_ERROR_HEX;
+<PARENTHESIS>([^\"\\]|(\\\\)*\\\"|\\x|\\t|\\0|\\r|(\\\\)*|\\n)*([^\\]|(\\\\)+)(\\)([^n(\")rt0(\\)x])([^\"\\]|(\\\\)*\\\"|\\x|\\t|\\0|\\r|(\\\\)*|\\n)* return STRING_ESCAPE_ERROR;
+<PARENTHESIS>((\\\\)|(\\n)|(\\t)|(\\r)|(\\\")|(\\0)|{hex}|{letter}|[^\"\\\n\r])*(\") {BEGIN(INITIAL);return STRING;}
+<PARENTHESIS>([^\"\\]|(\\\\)*\\\"|\\x|\\t|\\0|\\r|(\\\\)*|\\n)*(\\)((x[^01234567].)|(x[0-7][^0123456789abcdefABCDEF])|(x(\"))) return STRING_ESCAPE_ERROR_HEX;
 <PARENTHESIS>. return STRING_LINE_ERROR;
 {whitespace}
 . return CHAR_ERROR;
