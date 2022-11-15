@@ -44,14 +44,9 @@ continue return CONTINUE;
 (==|!=|<=|>=|<|>) return RELOP;
 (\+|\-|\*|\/) return BINOP;
 \/\/([^\n\r])* return COMMENT;
-({letter})+(({digit_zero}|{letter}))* return ID;
-(0|{digit}([0-9])*) return NUM;
-(\") BEGIN(PARENTHESIS);
-<PARENTHESIS>(\n) return STRING_LINE_ERROR;
-<PARENTHESIS>([^\"\\]|(\\\\)*\\\"|\\x|\\t|\\0|\\r|(\\\\)*|\\n)*([^\\]|(\\\\)+)(\\)([^n(\")rt0(\\)x])([^\"\\]|(\\\\)*\\\"|\\x|\\t|\\0|\\r|(\\\\)*|\\n)* return STRING_ESCAPE_ERROR;
-<PARENTHESIS>((\\\\)|(\\n)|(\\t)|(\\r)|(\\\")|(\\0)|{hex}|{letter}|[^\"\\\n\r])*(\") {BEGIN(INITIAL);return STRING;}
-<PARENTHESIS>([^\"\\]|(\\\\)*\\\"|\\x|\\t|\\0|\\r|(\\\\)*|\\n)*(\\)((x[^01234567].)|(x[0-7][^0123456789abcdefABCDEF])|(x(\"))) return STRING_ESCAPE_ERROR_HEX;
-<PARENTHESIS>. return STRING_LINE_ERROR;
+{letter}({letter}|{digit_zero})* ID
+0 | {digit}{digit_zero}* NUM
+"([^\n\r\"\\]|\\[rnt"\\])+" STRING
 {whitespace}
 . return CHAR_ERROR;
 
