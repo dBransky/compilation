@@ -1,0 +1,99 @@
+%{
+	#include <iostream>
+	#include <stdlib.h>
+	using namespace std;
+	extern int yylex();
+	int yyerror(const char * message);
+	#include "output.hpp"
+%}
+
+%nonassoc VOID;
+%nonassoc INT;
+%nonassoc BYTE;
+%nonassoc B;
+%nonassoc BOOL;
+%nonassoc TRUE;
+%nonassoc FALSE;
+%nonassoc RETURN;
+%nonassoc WHILE;
+%nonassoc BREAK;
+%nonassoc CONTINUE;
+%nonassoc SC;
+%nonassoc COMMA;
+%nonassoc LBRACE;
+%nonassoc RBRACE;
+%nonassoc ID;
+%nonassoc NUM;
+%nonassoc STRING;
+%right ASSIGN;
+%left OR;
+%left AND;
+%left RELOP;
+%left BINOP;
+%left LPAREN;
+%left RPAREN;
+%right IF;
+%right ELSE;
+%right NOT;
+%%
+Program: Funcs{output::printProductionRule(1);};
+Funcs: {output::printProductionRule(2);}|
+    FuncDecl Funcs{output::printProductionRule(3);};
+FuncDecl: RetType ID LPAREN Formals RPAREN LBRACE Statments RBRACE{output::printProductionRule(4);};
+RetType: Type{output::printProductionRule(5);}|
+    VOID{output::printProductionRule(6);};
+Formals: {output::printProductionRule(7);}|
+    FormalsList{output::printProductionRule(8);};
+FormalsList: FormalDecl{output::printProductionRule(9);}|
+    FormalDecl COMMA FormalsList{output::printProductionRule(10);}|
+FormalDecl: Type ID{output::printProductionRule(11);};
+Statments: Statment{output::printProductionRule(12);}|
+    Statments Statment{output::printProductionRule(13);};
+Statment: LBRACE Statments RBRACE{output::printProductionRule(14);}|
+    Type ID SC{output::printProductionRule(15);}|
+    Type ID ASSIGN Exp SC{output::printProductionRule(16);}|
+    ID ASSIGN Exp SC{output::printProductionRule(17);}|
+    Call SC{output::printProductionRule(18);}|
+    RETURN SC{output::printProductionRule(19);}|
+    RETURN Exp SC{output::printProductionRule(20);}|
+    IF LPAREN Exp RPAREN Statment{output::printProductionRule(21);}|
+    IF LPAREN Exp RPAREN Statment ELSE Statment{output::printProductionRule(22);}|
+    WHILE LPAREN Exp RPAREN Statment{output::printProductionRule(23);}|
+    BREAK SC{output::printProductionRule(24);}|
+    CONTINUE SC{output::printProductionRule(25);};
+Call: ID RPAREN ExpList RPAREN{output::printProductionRule(26);}|
+    ID RPAREN RPAREN{output::printProductionRule(27);};
+ExpList: Exp{output::printProductionRule(28);}|
+    Exp COMMA Exp{output::printProductionRule(29);}|
+Type: INT{output::printProductionRule(30);}|
+    BYTE{output::printProductionRule(31);}|
+    BOOL{output::printProductionRule(32);};
+Exp: LPAREN Exp RPAREN{output::printProductionRule(33);}|
+    Exp AND Exp{output::printProductionRule(43);}|
+    Exp OR Exp{output::printProductionRule(44);}|
+    ID{output::printProductionRule(35);}|
+    Call{output::printProductionRule(36);}|
+    NUM{output::printProductionRule(37);}|
+    NUM B{output::printProductionRule(38);}|
+    STRING{output::printProductionRule(39);}|
+    TRUE{output::printProductionRule(40);}|
+    FALSE{output::printProductionRule(41);}|
+    NOT Exp{output::printProductionRule(42);}|
+    Exp RELOP Exp{output::printProductionRule(45);}|
+    Exp BINOP{output::printProductionRule(34);}|
+    LPAREN Type RPAREN Exp{output::printProductionRule(46);};
+    
+%%
+int main(){
+    return yyparse();
+}
+int yyerror(const char * message)
+{
+	output::errorSyn(yylineno);
+	exit(0);
+}
+
+
+
+
+

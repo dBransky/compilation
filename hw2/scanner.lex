@@ -1,6 +1,8 @@
 %{
 #include <stdio.h>
-#include "tokens.hpp"
+#define YYSTYPE int
+#include "parser.tab.hpp"
+#include "output.hpp"
 %}
 
 %option yylineno
@@ -10,12 +12,6 @@ digit   		  ([1-9])
 digit_zero   		  ([0-9])
 letter  		  ([a-zA-Z])
 whitespace	  ([\t\n\r ])
-hex             (\\x[0-7][0-9A-Fa-f])
-escapechars     ([\\"nrt0])
-
-
-
-%x PARENTHESIS
 
 %%
 not return NOT;
@@ -43,11 +39,10 @@ continue return CONTINUE;
 (\=) return ASSIGN;
 (==|!=|<=|>=|<|>) return RELOP;
 (\+|\-|\*|\/) return BINOP;
-\/\/([^\n\r])* return COMMENT;
-{letter}({letter}|{digit_zero})* ID
-0 | {digit}{digit_zero}* NUM
-"([^\n\r\"\\]|\\[rnt"\\])+" STRING
+{letter}({letter}|{digit_zero})* return ID;
+0|{digit}{digit_zero}* return NUM;
+"([^\n\r\"\\]|\\[rnt\"\\])+" return STRING;
 {whitespace}
-. return CHAR_ERROR;
+. {output::errorLex(yylineno); exit(0);};
 
 %%
