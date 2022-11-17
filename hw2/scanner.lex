@@ -41,7 +41,8 @@ continue return CONTINUE;
 (\+|\-|\*|\/) return BINOP;
 {letter}({letter}|{digit_zero})* return ID;
 0|{digit}{digit_zero}* return NUM;
-"([^\n\r\"\\]|\\[rnt\"\\])+" return STRING;
+(\")([^(\n)(\r)(\")(\\)]|(\\)[rnt(\")(\\)])+(\") return STRING;
+\/\/[^\r\n]*[\r|\n|\r\n]? ;
 {whitespace}
 . {output::errorLex(yylineno); exit(0);};
 

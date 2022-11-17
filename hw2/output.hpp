@@ -2,6 +2,7 @@
 #define _236360_2_
 #include <string>
 extern int yylineno;
+extern char* yytext;
 namespace output
 {
     extern const std::string rules[];

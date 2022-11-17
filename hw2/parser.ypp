@@ -30,10 +30,10 @@
 %left AND;
 %left RELOP;
 %left BINOP;
-%left LPAREN;
 %left RPAREN;
 %right IF;
 %right ELSE;
+%left LPAREN;
 %right NOT;
 %%
 Program: Funcs{output::printProductionRule(1);};
@@ -61,8 +61,8 @@ Statment: LBRACE Statments RBRACE{output::printProductionRule(14);}|
     WHILE LPAREN Exp RPAREN Statment{output::printProductionRule(23);}|
     BREAK SC{output::printProductionRule(24);}|
     CONTINUE SC{output::printProductionRule(25);};
-Call: ID RPAREN ExpList RPAREN{output::printProductionRule(26);}|
-    ID RPAREN RPAREN{output::printProductionRule(27);};
+Call: ID LPAREN ExpList RPAREN{output::printProductionRule(26);}|
+    ID LPAREN RPAREN{output::printProductionRule(27);};
 ExpList: Exp{output::printProductionRule(28);}|
     Exp COMMA Exp{output::printProductionRule(29);}|
 Type: INT{output::printProductionRule(30);}|
@@ -80,7 +80,7 @@ Exp: LPAREN Exp RPAREN{output::printProductionRule(33);}|
     FALSE{output::printProductionRule(41);}|
     NOT Exp{output::printProductionRule(42);}|
     Exp RELOP Exp{output::printProductionRule(45);}|
-    Exp BINOP{output::printProductionRule(34);}|
+    Exp BINOP Exp{output::printProductionRule(34);}|
     LPAREN Type RPAREN Exp{output::printProductionRule(46);};
     
 %%
