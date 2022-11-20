@@ -64,7 +64,7 @@ Statment: LBRACE Statments RBRACE{output::printProductionRule(14);}|
 Call: ID LPAREN ExpList RPAREN{output::printProductionRule(26);}|
     ID LPAREN RPAREN{output::printProductionRule(27);};
 ExpList: Exp{output::printProductionRule(28);}|
-    Exp COMMA Exp{output::printProductionRule(29);}|
+    Exp COMMA ExpList{output::printProductionRule(29);}|
 Type: INT{output::printProductionRule(30);}|
     BYTE{output::printProductionRule(31);}|
     BOOL{output::printProductionRule(32);};
