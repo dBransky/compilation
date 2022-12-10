@@ -53,7 +53,7 @@ Exp::Exp(Node *term, std::string str) : Node(term->value)
 Exp::Exp(Node *id)
 {
     this->type = "";
-    for (size_t i = tablesStack.size() - 1; i >= 0; i -)
+    for (size_t i = tablesStack.size() - 1; i >= 0; i --)
     {
         for (size_t j = 0; j < tablesStack[j]->lines.size(); j++)
         {
@@ -78,9 +78,64 @@ Exp::Exp(Exp *exp1, Exp *exp2, Exp *exp3)
         output::errorMismatch(yylineno);
         exit(0);
     }
+    if (exp2->bool_val)
+    {
+        this->value = exp1->value;
+        this->type = exp1->type;
+        if(exp2->type=="BOOL")
+            this->bool_val=exp1->bool_val;
+    }
+    else
+    {
+        this->value = exp3->value;
+        this->type = exp3->type;
+        if(exp2->type=="BOOL")
+            this->bool_val=exp3->bool_val;
+    }
+
     if (exp2->type == "INT" && exp1->type == "BYTE" || exp1->type == "INT" && exp2->type == "BYTE")
     {
-        this->type = "INT";
+        return;
+    }
+    else if (exp2->type != exp1->type)
+    {
+        output::errorMismatch(yylineno);
+        exit(0);
+    }
+}
+Exp::Exp(Exp *left, Node *op, Exp *right, std::string str)
+{
+    this->type = "";
+    if ((left->type == "BYTE" || left->type == "INT") && (right->type == "INT" || right->type == "BYTE"))
+    {
+        if (str == "RELOPL" || str == "RELOPN")
+        {
+            this->type = "BOOL";
+        }
+        if (str == "ADD" || str == "MUL")
+        {
+            this->type = (left->type == "INT" || right->type == "INT") ? "INT" : "BYTE";
+        }
+    }
+    else if (left->type == "BOOL" && right->type == "BOOL")
+    {
+        bool bleft = left->value == "true";
+        bool bright = right->value == "true";
+        if (str == "AND")
+        {
+            if (bleft && bright)
+                this->value = "true";
+            else
+                this->value = "false";
+            return;
+        }
+        if (str == "OR")
+            this->value = (bleft || bright) ? "true" : "false";
+        else
+        {
+            output::errorMismatch(yylineno);
+            exit(0);
+        }
     }
     else
     {
@@ -88,10 +143,7 @@ Exp::Exp(Exp *exp1, Exp *exp2, Exp *exp3)
         exit(0);
     }
 }
-Exp::Exp(Exp *left, Node *op, Exp *right, std::string str){
-
-}
-Exp::Exp(Exp *exp, std::string str) 
+Exp::Exp(Exp *exp, std::string str)
 {
     if (exp->type != "BOOL")
     {
@@ -168,4 +220,15 @@ Call::Call(Node *id, ExpList *list)
     }
     output::errorUndefFunc(yylineno, id->value);
     exit(0);
+}
+Program::Program(){
+        shared_ptr<SymbolTable> global = shared_ptr<SymbolTable>(new SymbolTable);
+    const vector<string> temp = {"STRING", "VOID"};
+    auto print = shared_ptr<SBEntry>(new SBEntry("print", temp, 0));
+    const vector<string> temp2 = {"INT", "VOID"};
+    auto printi = shared_ptr<SBEntry>(new SBEntry("printi", temp2, 0));
+    global->lines.emplace_back(print);
+    global->lines.emplace_back(printi);
+    tablesStack.emplace_back(global);
+    offsetsStack.emplace_back(0);
 }

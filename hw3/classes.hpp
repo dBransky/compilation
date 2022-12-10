@@ -17,7 +17,7 @@ public:
     int offset;
 
     SBEntry(std::string name, vector<std::string> types, int offset)
-    {   
+    {
         this->name = name;
         this->types = types;
         this->offset = offset;
@@ -63,24 +63,46 @@ class RetType : public Node
 public:
     RetType(Node *type);
 };
-class Formals : public Node
+class Funcs : public Node
 {
 public:
-    Formals();
-    Formals(FormalsList *formals_lst);
+    Funcs(){};
+};
+class Program : public Node
+{
+public:
+    Program();
 };
 
 class FormalsList : public Node
 {
-    vector<Formals> list;
-    FormalsList(FormalDecl *formal_decl);
-    FormalsList(FormalDecl *formal_decl, FormalsList *formals_lst);
+public:
+    vector<FormalDecl *> list;
+    FormalsList(FormalDecl *formal_decl)
+    {
+        list.insert(list.begin(), formal_decl);
+    }
+    FormalsList(FormalDecl *formal_decl, FormalsList *formals_lst)
+    {
+        list = vector<FormalDecl *>(formals_lst->list);
+        list.insert(list.begin(), formal_decl);
+    }
+};
+class Formals : public Node
+{
+public:
+    vector<FormalDecl *> list;
+    Formals(){};
+    Formals(FormalsList *formals_lst)
+    {
+        list = vector<FormalDecl *>(formals_lst->list);
+    };
 };
 class FormalDecl : public Node
 {
 public:
     std::string type;
-    FormalDecl(Type *type, Node *id);
+    FormalDecl(Type *type, Node *id) : Node(id->value), type(type->value) {}
 };
 class Statments : public Node
 {
@@ -132,7 +154,14 @@ class ExpList : public Node
 {
 public:
     vector<Exp> exp_list;
-    ExpList(Exp *exp);
-    ExpList(Exp *exp, ExpList *exp_lst);
+    ExpList(Exp *exp)
+    {
+        exp_list.emplace(exp_list.begin(), exp);
+    }
+    ExpList(Exp *exp, ExpList *exp_lst)
+    {
+        this->exp_list = vector<Exp>(exp_lst->exp_list);
+        this->exp_list.emplace(exp_list.begin(), exp);
+    }
 };
 #endif // CLASSES_HPP
