@@ -369,9 +369,6 @@ Statment::Statment(Exp *exp)
 Statment::Statment(std::string str)
 {
     for (size_t i = tablesStack.size() - 1; i >= 0; i--)
-        void openScope(){
-
-        }
         {
             for (size_t j = 0; j < tablesStack[i]->lines.size(); ++j)
             {
@@ -402,9 +399,6 @@ Statment::Statment(Node *id, Exp *exp)
         {
             if (tablesStack[i]->lines[j]->name == id->value)
             {
-                void openScope()
-                {
-                }
                 if (tablesStack[i]->lines[j]->types.size() == 1)
                 {
                     if ((tablesStack[i]->lines[j]->types[0] == "INT" && exp->type == "BYTE") || (tablesStack[i]->lines[j]->types[0] == exp->type))
