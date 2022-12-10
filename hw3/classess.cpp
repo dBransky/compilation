@@ -1,8 +1,90 @@
+#ifndef CLASSES_CPP
+#define CLASSES_CPP
 #include "classes.hpp"
 
-string currFucn;
+string currFunc;
 vector<shared_ptr<SymbolTable>> tablesStack;
 vector<int> offsetsStack;
+bool idExists(string str)
+{
+    for (int i = tablesStack.size() - 1; i >= 0; i--)
+    {
+        for (int j = 0; j < tablesStack[i]->lines.size(); ++j)
+        {
+            if (tablesStack[i]->lines[j]->name == str)
+                return true;
+        }
+    }
+    return false;
+}
+void endFunc()
+{
+    currFunc = "";
+}
+int loopCount = 0;
+void inloop()
+{
+    loopCount++;
+}
+void outloop()
+{
+    loopCount--;
+}
+void openScope()
+{
+    auto newScope = shared_ptr<SymbolTable>(new SymbolTable);
+    tablesStack.emplace_back(newScope);
+    offsetsStack.push_back(offsetsStack.back());
+}
+void closeScope()
+{
+    output::endScope();
+    auto scope = tablesStack.back();
+    for (auto i : scope->lines)
+    {
+        if (i->types.size() == 1)
+        {
+            output::printID(i->name, i->offset, i->types[0]);
+        }
+        else
+        {
+            auto retVal = i->types.back();
+            i->types.pop_back();
+            if (i->types.front() == "VOID")
+            {
+                i->types.pop_back();
+            }
+
+            output::printID(i->name, i->offset, output::makeFunctionType(retVal,
+                                                                         i->types)); 
+        }
+    }
+
+    while (scope->lines.size() != 0)
+    {
+        scope->lines.pop_back();
+    }
+    tablesStack.pop_back();
+    offsetsStack.pop_back();
+}
+void endProgram(){
+    auto global = tablesStack.front()->lines;
+    bool mainFound = false;
+    for (int i = 0; i < global.size(); ++i) {
+        if (global[i]->name == "main") {
+            if (global[i]->types.size() == 2) {
+                if (global[i]->types[0] == "VOID" && global[i]->types[1] == "VOID") {
+                    mainFound = true;
+                }
+            }
+        }
+    }
+    if (!mainFound) {
+        output::errorMainMissing();
+        exit(0);
+    }
+    closeScope();
+}
 Exp::Exp(Exp *exp)
 {
     value = exp->value;
@@ -53,7 +135,7 @@ Exp::Exp(Node *term, std::string str) : Node(term->value)
 Exp::Exp(Node *id)
 {
     this->type = "";
-    for (size_t i = tablesStack.size() - 1; i >= 0; i --)
+    for (size_t i = tablesStack.size() - 1; i >= 0; i--)
     {
         for (size_t j = 0; j < tablesStack[j]->lines.size(); j++)
         {
@@ -82,15 +164,15 @@ Exp::Exp(Exp *exp1, Exp *exp2, Exp *exp3)
     {
         this->value = exp1->value;
         this->type = exp1->type;
-        if(exp2->type=="BOOL")
-            this->bool_val=exp1->bool_val;
+        if (exp2->type == "BOOL")
+            this->bool_val = exp1->bool_val;
     }
     else
     {
         this->value = exp3->value;
         this->type = exp3->type;
-        if(exp2->type=="BOOL")
-            this->bool_val=exp3->bool_val;
+        if (exp2->type == "BOOL")
+            this->bool_val = exp3->bool_val;
     }
 
     if (exp2->type == "INT" && exp1->type == "BYTE" || exp1->type == "INT" && exp2->type == "BYTE")
@@ -221,8 +303,9 @@ Call::Call(Node *id, ExpList *list)
     output::errorUndefFunc(yylineno, id->value);
     exit(0);
 }
-Program::Program(){
-        shared_ptr<SymbolTable> global = shared_ptr<SymbolTable>(new SymbolTable);
+Program::Program()
+{
+    shared_ptr<SymbolTable> global = shared_ptr<SymbolTable>(new SymbolTable);
     const vector<string> temp = {"STRING", "VOID"};
     auto print = shared_ptr<SBEntry>(new SBEntry("print", temp, 0));
     const vector<string> temp2 = {"INT", "VOID"};
@@ -231,4 +314,193 @@ Program::Program(){
     global->lines.emplace_back(printi);
     tablesStack.emplace_back(global);
     offsetsStack.emplace_back(0);
+}
+Statment::Statment(Node *term)
+{
+    if (loopCount == 0)
+    {
+        if (term->value == "break")
+        {
+            output::errorUnexpectedBreak(yylineno);
+            exit(0);
+        }
+        output::errorUnexpectedContinue(yylineno);
+        exit(0);
+    }
+    data = "break";
+}
+
+Statment::Statment(Exp *exp)
+{
+    if (exp->type == "VOID")
+    {
+        output::errorMismatch(yylineno);
+        exit(0);
+    }
+    string ret_type = exp->type;
+    for (size_t i = tablesStack.size() - 1; i >= 0; i--)
+    {
+        for (size_t j = 0; j < tablesStack[i]->lines.size(); ++j)
+        {
+            if (tablesStack[i]->lines[j]->name == currFunc)
+            {
+                int size = tablesStack[i]->lines[j]->types.size();
+                if (tablesStack[i]->lines[j]->types[size - 1] == ret_type)
+                {
+                    data = exp->value;
+                    return;
+                }
+                else if (ret_type == "BYTE" && tablesStack[i]->lines[j]->types[size - 1] == "INT")
+                {
+                    data = exp->value;
+                    return;
+                }
+                else
+                {
+                    output::errorMismatch(yylineno);
+                    exit(0);
+                }
+            }
+        }
+    }
+    output::errorUndef(yylineno, "");
+    exit(0);
+}
+Statment::Statment(std::string str)
+{
+    for (size_t i = tablesStack.size() - 1; i >= 0; i--)
+        void openScope(){
+
+        }
+        {
+            for (size_t j = 0; j < tablesStack[i]->lines.size(); ++j)
+            {
+                if (tablesStack[i]->lines[j]->name == currFunc)
+                {
+                    int size = tablesStack[i]->lines[j]->types.size();
+                    if (tablesStack[i]->lines[j]->types[size - 1] == str)
+                    {
+                        data = "ret void";
+                        return;
+                    }
+                    else
+                    {
+                        output::errorMismatch(yylineno);
+                        exit(0);
+                    }
+                }
+            }
+        }
+    output::errorUndef(yylineno, "");
+    exit(0);
+}
+Statment::Statment(Node *id, Exp *exp)
+{
+    for (size_t i = tablesStack.size() - 1; i >= 0; i--)
+    {
+        for (size_t j = 0; j < tablesStack[i]->lines.size(); ++j)
+        {
+            if (tablesStack[i]->lines[j]->name == id->value)
+            {
+                void openScope()
+                {
+                }
+                if (tablesStack[i]->lines[j]->types.size() == 1)
+                {
+                    if ((tablesStack[i]->lines[j]->types[0] == "INT" && exp->type == "BYTE") || (tablesStack[i]->lines[j]->types[0] == exp->type))
+                        data = exp->value;
+                    return;
+                }
+                else
+                {
+                    output::errorMismatch(yylineno);
+                    exit(0);
+                }
+            }
+            else
+            {
+                output::errorUndef(yylineno, id->value);
+                exit(0);
+            }
+        }
+    }
+    output::errorUndef(yylineno, id->value);
+    exit(0);
+}
+Statment::Statment(Type *type, Node *id, Exp *exp)
+{
+    if (exp->type != type->value)
+    {
+        if (type->value != "INT" || exp->type != "BYTE")
+        {
+            output::errorMismatch(yylineno);
+            exit(0);
+        }
+    }
+    if (idExists(id->value))
+    {
+        output::errorDef(yylineno, id->value);
+        exit(0);
+    }
+    data = exp->value;
+    int offset = offsetsStack.back()++;
+    auto temp = shared_ptr<SBEntry>(new SBEntry(id->value, type->value, offset));
+    tablesStack.back()->lines.emplace_back(temp);
+}
+Statment::Statment(Type *type, Node *id)
+{
+    if (idExists(id->value))
+    {
+        output::errorDef(yylineno, id->value);
+        exit(0);
+    }
+    data = "type id";
+    int offset = offsetsStack.back()++;
+    auto temp = shared_ptr<SBEntry>(new SBEntry(id->value, type->value, offset));
+    tablesStack.back()->lines.emplace_back(temp);
+}
+FuncDecl::FuncDecl(RetType *ret_type, Node *id, Formals *formals)
+{
+    if (idExists(id->value))
+    {
+        output::errorDef(yylineno, id->value);
+        exit(0);
+    }
+    for (size_t i = 0; i < formals->list.size(); i++)
+    {
+        if (idExists(formals->list[i]->value) || formals->list[i]->value == id->value)
+        {
+            output::errorDef(yylineno, id->value);
+            exit(0);
+        }
+        for (int j = i + 1; j < formals->list.size(); ++j)
+        {
+            if (formals->list[i]->value == formals->list[j]->value)
+            {
+                output::errorDef(yylineno, formals->list[i]->value);
+                exit(0);
+            }
+        }
+    }
+    value = id->value;
+    if (formals->list.size() != 0)
+    {
+        for (int i = 0; i < formals->list.size(); i++)
+        {
+            this->types.push_back(formals->list[i]->type);
+        }
+    }
+    else
+    {
+        this->types.emplace_back("VOID");
+    }
+    this->types.emplace_back(ret_type->value);
+
+    auto temp = shared_ptr<SBEntry>(new SBEntry(this->value, this->types, 0));
+    tablesStack.back()->lines.push_back(temp);
+    currFunc = id->value;
+}
+#endif
+void openScope()
+{
 }

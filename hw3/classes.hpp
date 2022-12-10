@@ -1,6 +1,6 @@
 #ifndef CLASSES_HPP
 #define CLASSES_HPP
-#include <string>
+#include <string.h>
 #include <algorithm>
 #include <vector>
 #include <stack>
@@ -9,6 +9,13 @@
 #include <stdlib.h>
 #include "hw3_output.hpp"
 extern int yylineno;
+void inLoop();
+void outLoop();
+void openScope();
+void closeScope();
+void endProgram();
+bool idExists(string str);
+
 class SBEntry
 {
 public:
@@ -55,13 +62,13 @@ public:
 class FuncDecl : public Node
 {
 public:
-    vector<FormalDecl *> formals;
+    vector<string> types;
     FuncDecl(RetType *ret_type, Node *id, Formals *formals);
 };
 class RetType : public Node
 {
 public:
-    RetType(Node *type);
+    RetType(Node *type) : Node(type->value){};
 };
 class Funcs : public Node
 {
@@ -107,21 +114,37 @@ public:
 class Statments : public Node
 {
 public:
-    Statments(Statment *statment);
-    Statments(Statments *statments, Statment *statment);
+    Statments(Statment *statment){};
+    Statments(Statments *statments, Statment *statment){};
 };
 
 class Statment : public Node
 {
 public:
-    Statment(Statments *statments);
+    std::string data;
+    Statment(Statments *statments)
+    {
+        this->data = "black";
+    };
     Statment(Type *type, Node *id);
     Statment(Node *term);
     Statment(Type *type, Node *id, Exp *exp);
-    Statment(Call *call);
+    Statment(Node *id, Exp *exp);
+    Statment(Call *call)
+    {
+        this->data = "call";
+    }
     Statment(std::string str);
     Statment(Exp *exp);
-    Statment(std::string str, Exp *exp);
+    Statment(std::string str, Exp *exp)
+    {
+        if (exp->type != "BOOL")
+        {
+            output::errorMismatch(yylineno);
+            exit(0);
+        }
+        this->data = "if/else";
+    }
 };
 class Call : public Node
 {
