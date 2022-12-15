@@ -37,6 +37,17 @@ public:
         this->offset = offset;
     }
 };
+class FormalDecl;
+class Type;
+class Statment;
+class RetType;
+class Formals;
+class Statments;
+class Exp;
+class Call;
+class ExpList;
+void enterArguments(Formals *fm);
+void endFunc();
 class SymbolTable
 {
 public:
@@ -59,6 +70,10 @@ public:
     virtual ~Node(){};
 };
 #define YYSTYPE Node *
+class Type : public Node {
+public:
+    Type(Node *type) : Node(type->value) {};
+};
 class FuncDecl : public Node
 {
 public:
@@ -89,7 +104,7 @@ public:
     {
         list.insert(list.begin(), formal_decl);
     }
-    FormalsList(FormalDecl *formal_decl, FormalsList *formals_lst)
+    FormalsList(FormalsList *formals_lst,FormalDecl *formal_decl)
     {
         list = vector<FormalDecl *>(formals_lst->list);
         list.insert(list.begin(), formal_decl);
@@ -118,6 +133,21 @@ public:
     Statments(Statments *statments, Statment *statment){};
 };
 
+class Exp : public Node
+{
+public:
+    std::string type;
+    bool bool_val;
+    Exp(Exp *exp);
+    Exp(Type *type, Exp *exp);
+    Exp(Node *_not, Exp *exp);
+    Exp(Exp *left, Node *op, Exp *right, std::string str);
+    Exp(Exp *exp1, Exp *exp2, Exp *exp3);
+    Exp(Exp *exp, std::string str);
+    Exp(Node *id);
+    Exp(Call *call);
+    Exp(Node *term, std::string str);
+};
 class Statment : public Node
 {
 public:
@@ -153,26 +183,6 @@ public:
     Call(Node *id);
 };
 // #define YYSTYPE yystype
-class Type : public Node
-{
-public:
-    Type(Node *type);
-};
-class Exp : public Node
-{
-public:
-    std::string type;
-    bool bool_val;
-    Exp(Exp *exp);
-    Exp(Type *type, Exp *exp);
-    Exp(Node *_not, Exp *exp);
-    Exp(Exp *left, Node *op, Exp *right, std::string str);
-    Exp(Exp *exp1, Exp *exp2, Exp *exp3);
-    Exp(Exp *exp, std::string str);
-    Exp(Node *id);
-    Exp(Call *call);
-    Exp(Node *term, std::string str);
-};
 class ExpList : public Node
 {
 public:

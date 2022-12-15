@@ -16,6 +16,14 @@ bool idExists(string str)
         }
     }
     return false;
+}   
+void enterArguments(Formals *fm){
+    for (size_t i = 0; i < fm->list.size(); i++)
+    {
+        auto entr=shared_ptr<SBEntry>(new SBEntry(fm->list[i]->value,fm->list[i]->type,-i-1));
+
+    }
+    
 }
 void endFunc()
 {
@@ -495,6 +503,3 @@ FuncDecl::FuncDecl(RetType *ret_type, Node *id, Formals *formals)
     currFunc = id->value;
 }
 #endif
-void openScope()
-{
-}
