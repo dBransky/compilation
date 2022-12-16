@@ -59,8 +59,8 @@ class Node
 public:
     std::string value;
     Node(std::string str)
-    {
-        std::transform(str.begin(), str.end(), str.begin(), ::toupper);
+    {   if(str=="void"||str=="bool"||str=="int"||str=="byte")
+            std::transform(str.begin(), str.end(), str.begin(), ::toupper);
         this->value = str;
     }
     Node()

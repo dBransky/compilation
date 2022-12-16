@@ -64,8 +64,8 @@ Statment : 		 LBRACE OS Statments CS RBRACE {$$= new Statment (dynamic_cast<Stat
 								 | Call SC {$$= new Statment (dynamic_cast<Call*> ($1));}
 								 | RETURN SC {$$= new Statment ("VOID");}
 								 | RETURN Exp SC {$$= new Statment (dynamic_cast<Exp*> ($2));}
-								 | IF LPAREN FRUIT RPAREN OS Statment {$$= new Statment ("if", dynamic_cast<Exp*> ($3)); closeScope();}  
-								 | IF LPAREN FRUIT RPAREN OS Statment ELSE {$$= new Statment ("if else", dynamic_cast<Exp*> ($3)); closeScope();} OS Statment CS   
+								 | IF LPAREN FOO RPAREN OS Statment {$$= new Statment ("if", dynamic_cast<Exp*> ($3)); closeScope();}  
+								 | IF LPAREN FOO RPAREN OS Statment ELSE {$$= new Statment ("if else", dynamic_cast<Exp*> ($3)); closeScope();} OS Statment CS   
 								 | WHILE LPAREN Exp RPAREN {$$= new Statment ("while", dynamic_cast<Exp*> ($3));inLoop();} OS Statment CS { outLoop();}
 								 | BREAK SC {$$= new Statment ($1);}
 								 | CONTINUE SC {$$= new Statment ($1);};
@@ -79,7 +79,7 @@ Type : 		 			 INT {$$= new Type ($1);}//
 Exp :      	  	 LPAREN Exp RPAREN {$$= new Exp(dynamic_cast<Exp*> ($2));}
 								 | Exp AND Exp {$$= new Exp(dynamic_cast<Exp*> ($1),$2,dynamic_cast<Exp*> ($3),"AND");}
 								 | Exp OR Exp {$$= new Exp(dynamic_cast<Exp*> ($1),$2,dynamic_cast<Exp*> ($3),"OR");}
-								 | Exp IF LPAREN Exp RPAREN ELSE Exp {$$= new Exp(dynamic_cast<Exp*> ($1),dynamic_cast<Exp*> ($2),dynamic_cast<Exp*> ($3));}
+								 | Exp IF LPAREN Exp RPAREN ELSE Exp {$$= new Exp(dynamic_cast<Exp*> ($1),dynamic_cast<Exp*> ($4),dynamic_cast<Exp*> ($7));}
 								 | ID {$$= new Exp($1);}
 								 | Call {$$= new Exp(dynamic_cast<Call*> ($1));}
 								 | NUM {$$= new Exp($1,"num");}
@@ -95,7 +95,7 @@ Exp :      	  	 LPAREN Exp RPAREN {$$= new Exp(dynamic_cast<Exp*> ($2));}
 							   | LPAREN Type RPAREN Exp {$$= new Exp(dynamic_cast<Type*> ($2),dynamic_cast<Exp*> ($4));};
 
 
-FRUIT:	Exp {$$= new Exp(dynamic_cast<Exp*>($1),"STRING");};
+FOO:	Exp {$$= new Exp(dynamic_cast<Exp*>($1),"STRING");};
 OS:						 		{openScope();};
 CS:								{closeScope();};
 

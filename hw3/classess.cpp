@@ -18,9 +18,10 @@ bool idExists(string str)
     return false;
 }   
 void enterArguments(Formals *fm){
-    for (size_t i = 0; i < fm->list.size(); i++)
+    for (int i = 0; i < fm->list.size(); i++)
     {
         auto entr=shared_ptr<SBEntry>(new SBEntry(fm->list[i]->value,fm->list[i]->type,-i-1));
+        tablesStack.back()->lines.push_back(entr);
 
     }
     
@@ -30,11 +31,11 @@ void endFunc()
     currFunc = "";
 }
 int loopCount = 0;
-void inloop()
+void inLoop()
 {
     loopCount++;
 }
-void outloop()
+void outLoop()
 {
     loopCount--;
 }
@@ -143,9 +144,9 @@ Exp::Exp(Node *term, std::string str) : Node(term->value)
 Exp::Exp(Node *id)
 {
     this->type = "";
-    for (size_t i = tablesStack.size() - 1; i >= 0; i--)
+    for (int i = tablesStack.size() - 1; i >= 0; i--)
     {
-        for (size_t j = 0; j < tablesStack[j]->lines.size(); j++)
+        for (int j = 0; j < tablesStack[i]->lines.size(); ++j)
         {
             if (tablesStack[i]->lines[j]->name == id->value)
             {
@@ -162,7 +163,7 @@ Exp::Exp(Call *call)
     this->type = call->value;
 }
 Exp::Exp(Exp *exp1, Exp *exp2, Exp *exp3)
-{
+{   
     if (exp2->type != "BOOL")
     {
         output::errorMismatch(yylineno);
@@ -172,22 +173,18 @@ Exp::Exp(Exp *exp1, Exp *exp2, Exp *exp3)
     {
         this->value = exp1->value;
         this->type = exp1->type;
-        if (exp2->type == "BOOL")
-            this->bool_val = exp1->bool_val;
     }
     else
     {
         this->value = exp3->value;
         this->type = exp3->type;
-        if (exp2->type == "BOOL")
-            this->bool_val = exp3->bool_val;
     }
 
     if (exp2->type == "INT" && exp1->type == "BYTE" || exp1->type == "INT" && exp2->type == "BYTE")
     {
         return;
     }
-    else if (exp2->type != exp1->type)
+    else if (exp1->type != exp3->type)
     {
         output::errorMismatch(yylineno);
         exit(0);
@@ -201,10 +198,12 @@ Exp::Exp(Exp *left, Node *op, Exp *right, std::string str)
         if (str == "RELOPL" || str == "RELOPN")
         {
             this->type = "BOOL";
+            return;
         }
         if (str == "ADD" || str == "MUL")
         {
             this->type = (left->type == "INT" || right->type == "INT") ? "INT" : "BYTE";
+            return;
         }
     }
     else if (left->type == "BOOL" && right->type == "BOOL")
@@ -220,7 +219,8 @@ Exp::Exp(Exp *left, Node *op, Exp *right, std::string str)
             return;
         }
         if (str == "OR")
-            this->value = (bleft || bright) ? "true" : "false";
+            {this->value = (bleft || bright) ? "true" : "false";
+            return;}
         else
         {
             output::errorMismatch(yylineno);
@@ -278,7 +278,7 @@ Call::Call(Node *id, ExpList *list)
     for (auto i : global)
     {
         if (i->name == id->value)
-        {
+        {   
             if (i->types.size() == 1)
             {
                 output::errorUndefFunc(yylineno, id->value);
@@ -286,7 +286,7 @@ Call::Call(Node *id, ExpList *list)
             }
             if (i->types.size() == 1 + list->exp_list.size())
             {
-                for (size_t j = 0; j < list->exp_list.size(); j++)
+                for (int j = 0; j < list->exp_list.size(); j++)
                 {
                     if (list->exp_list[j].type == "BYTE" && i->types[j] == "INT")
                         continue;
@@ -297,7 +297,7 @@ Call::Call(Node *id, ExpList *list)
                         exit(0);
                     }
                 }
-
+                this->value=i->types.back();
                 return;
             }
             else
@@ -346,9 +346,9 @@ Statment::Statment(Exp *exp)
         exit(0);
     }
     string ret_type = exp->type;
-    for (size_t i = tablesStack.size() - 1; i >= 0; i--)
+    for (int i = tablesStack.size() - 1; i >= 0; i--)
     {
-        for (size_t j = 0; j < tablesStack[i]->lines.size(); ++j)
+        for (int j = 0; j < tablesStack[i]->lines.size(); ++j)
         {
             if (tablesStack[i]->lines[j]->name == currFunc)
             {
@@ -376,9 +376,9 @@ Statment::Statment(Exp *exp)
 }
 Statment::Statment(std::string str)
 {
-    for (size_t i = tablesStack.size() - 1; i >= 0; i--)
+    for (int i = tablesStack.size() - 1; i >= 0; i--)
         {
-            for (size_t j = 0; j < tablesStack[i]->lines.size(); ++j)
+            for (int j = 0; j < tablesStack[i]->lines.size(); ++j)
             {
                 if (tablesStack[i]->lines[j]->name == currFunc)
                 {
@@ -401,9 +401,9 @@ Statment::Statment(std::string str)
 }
 Statment::Statment(Node *id, Exp *exp)
 {
-    for (size_t i = tablesStack.size() - 1; i >= 0; i--)
+    for (int i = tablesStack.size() - 1; i >= 0; i--)
     {
-        for (size_t j = 0; j < tablesStack[i]->lines.size(); ++j)
+        for (int j = 0; j < tablesStack[i]->lines.size(); ++j)
         {
             if (tablesStack[i]->lines[j]->name == id->value)
             {
@@ -468,7 +468,7 @@ FuncDecl::FuncDecl(RetType *ret_type, Node *id, Formals *formals)
         output::errorDef(yylineno, id->value);
         exit(0);
     }
-    for (size_t i = 0; i < formals->list.size(); i++)
+    for (int i = 0; i < formals->list.size(); i++)
     {
         if (idExists(formals->list[i]->value) || formals->list[i]->value == id->value)
         {
