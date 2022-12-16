@@ -150,13 +150,14 @@ Exp::Exp(Node *id)
         {
             if (tablesStack[i]->lines[j]->name == id->value)
             {
-                this->type = id->value;
+                this->value = id->value;
                 this->type = tablesStack[i]->lines[j]->types.back();
                 return;
             }
         }
     }
     output::errorUndef(yylineno, id->value);
+    exit(0);
 }
 Exp::Exp(Call *call)
 {
@@ -210,6 +211,7 @@ Exp::Exp(Exp *left, Node *op, Exp *right, std::string str)
     {
         bool bleft = left->value == "true";
         bool bright = right->value == "true";
+        this->type="BOOL";
         if (str == "AND")
         {
             if (bleft && bright)
@@ -234,7 +236,9 @@ Exp::Exp(Exp *left, Node *op, Exp *right, std::string str)
     }
 }
 Exp::Exp(Exp *exp, std::string str)
-{
+{   
+    if(exp->type=="")
+        exp->type="BOOL";
     if (exp->type != "BOOL")
     {
         output::errorMismatch(yylineno);
@@ -406,7 +410,7 @@ Statment::Statment(Node *id, Exp *exp)
         for (int j = 0; j < tablesStack[i]->lines.size(); ++j)
         {
             if (tablesStack[i]->lines[j]->name == id->value)
-            {
+            {   
                 if (tablesStack[i]->lines[j]->types.size() == 1)
                 {
                     if ((tablesStack[i]->lines[j]->types[0] == "INT" && exp->type == "BYTE") || (tablesStack[i]->lines[j]->types[0] == exp->type))
@@ -418,11 +422,6 @@ Statment::Statment(Node *id, Exp *exp)
                     output::errorMismatch(yylineno);
                     exit(0);
                 }
-            }
-            else
-            {
-                output::errorUndef(yylineno, id->value);
-                exit(0);
             }
         }
     }
