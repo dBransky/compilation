@@ -16,15 +16,14 @@ bool idExists(string str)
         }
     }
     return false;
-}   
-void enterArguments(Formals *fm){
+}
+void enterArguments(Formals *fm)
+{
     for (int i = 0; i < fm->list.size(); i++)
     {
-        auto entr=shared_ptr<SBEntry>(new SBEntry(fm->list[i]->value,fm->list[i]->type,-i-1));
+        auto entr = shared_ptr<SBEntry>(new SBEntry(fm->list[i]->value, fm->list[i]->type, -i - 1));
         tablesStack.back()->lines.push_back(entr);
-
     }
-    
 }
 void endFunc()
 {
@@ -64,8 +63,7 @@ void closeScope()
                 i->types.pop_back();
             }
 
-            output::printID(i->name, i->offset, output::makeFunctionType(retVal,
-                                                                         i->types)); 
+            output::printID(i->name, i->offset, output::makeFunctionType(retVal, i->types));
         }
     }
 
@@ -76,19 +74,25 @@ void closeScope()
     tablesStack.pop_back();
     offsetsStack.pop_back();
 }
-void endProgram(){
+void endProgram()
+{
     auto global = tablesStack.front()->lines;
     bool mainFound = false;
-    for (int i = 0; i < global.size(); ++i) {
-        if (global[i]->name == "main") {
-            if (global[i]->types.size() == 2) {
-                if (global[i]->types[0] == "VOID" && global[i]->types[1] == "VOID") {
+    for (int i = 0; i < global.size(); ++i)
+    {
+        if (global[i]->name == "main")
+        {
+            if (global[i]->types.size() == 2)
+            {
+                if (global[i]->types[0] == "VOID" && global[i]->types[1] == "VOID")
+                {
                     mainFound = true;
                 }
             }
         }
     }
-    if (!mainFound) {
+    if (!mainFound)
+    {
         output::errorMainMissing();
         exit(0);
     }
@@ -102,9 +106,16 @@ Exp::Exp(Exp *exp)
 }
 Exp::Exp(Type *type, Exp *exp)
 {
-    value = exp->value;
-    this->type = type->value;
-    this->bool_val = exp->bool_val;
+    if ((type->value == "INT" || type->value == "BYTE") && (exp->type == "INT" || exp->type == "BYTE"))
+    {
+        value = exp->value;
+        this->type = type->value;
+    }
+    else
+    {
+        output::errorMismatch(yylineno);
+        exit(0);
+    }
 }
 Exp::Exp(Node *_not, Exp *exp)
 {
@@ -150,9 +161,12 @@ Exp::Exp(Node *id)
         {
             if (tablesStack[i]->lines[j]->name == id->value)
             {
-                this->value = id->value;
-                this->type = tablesStack[i]->lines[j]->types.back();
-                return;
+                if (tablesStack[i]->lines[j]->types.size() == 1)
+                {
+                    this->value = id->value;
+                    this->type = tablesStack[i]->lines[j]->types.back();
+                    return;
+                }
             }
         }
     }
@@ -164,7 +178,7 @@ Exp::Exp(Call *call)
     this->type = call->value;
 }
 Exp::Exp(Exp *exp1, Exp *exp2, Exp *exp3)
-{   
+{
     if (exp2->type != "BOOL")
     {
         output::errorMismatch(yylineno);
@@ -173,16 +187,15 @@ Exp::Exp(Exp *exp1, Exp *exp2, Exp *exp3)
     if (exp2->bool_val)
     {
         this->value = exp1->value;
-        this->type = exp1->type;
     }
     else
     {
         this->value = exp3->value;
-        this->type = exp3->type;
     }
 
-    if (exp2->type == "INT" && exp1->type == "BYTE" || exp1->type == "INT" && exp2->type == "BYTE")
-    {
+    if (exp3->type == "INT" && exp1->type == "BYTE" || exp1->type == "INT" && exp3->type == "BYTE")
+    {   
+        this->type="INT";
         return;
     }
     else if (exp1->type != exp3->type)
@@ -190,6 +203,7 @@ Exp::Exp(Exp *exp1, Exp *exp2, Exp *exp3)
         output::errorMismatch(yylineno);
         exit(0);
     }
+    this->type=exp1->type;
 }
 Exp::Exp(Exp *left, Node *op, Exp *right, std::string str)
 {
@@ -211,7 +225,7 @@ Exp::Exp(Exp *left, Node *op, Exp *right, std::string str)
     {
         bool bleft = left->value == "true";
         bool bright = right->value == "true";
-        this->type="BOOL";
+        this->type = "BOOL";
         if (str == "AND")
         {
             if (bleft && bright)
@@ -221,8 +235,10 @@ Exp::Exp(Exp *left, Node *op, Exp *right, std::string str)
             return;
         }
         if (str == "OR")
-            {this->value = (bleft || bright) ? "true" : "false";
-            return;}
+        {
+            this->value = (bleft || bright) ? "true" : "false";
+            return;
+        }
         else
         {
             output::errorMismatch(yylineno);
@@ -236,9 +252,9 @@ Exp::Exp(Exp *left, Node *op, Exp *right, std::string str)
     }
 }
 Exp::Exp(Exp *exp, std::string str)
-{   
-    if(exp->type=="")
-        exp->type="BOOL";
+{
+    if (exp->type == "")
+        exp->type = "BOOL";
     if (exp->type != "BOOL")
     {
         output::errorMismatch(yylineno);
@@ -267,7 +283,7 @@ Call::Call(Node *id)
             }
             else
             {
-                vector<string> temp = {""};
+                vector<string> temp = {i->types[0],i->types[1]};
                 output::errorPrototypeMismatch(yylineno, i->name, temp);
                 exit(0);
             }
@@ -282,7 +298,7 @@ Call::Call(Node *id, ExpList *list)
     for (auto i : global)
     {
         if (i->name == id->value)
-        {   
+        {
             if (i->types.size() == 1)
             {
                 output::errorUndefFunc(yylineno, id->value);
@@ -301,7 +317,7 @@ Call::Call(Node *id, ExpList *list)
                         exit(0);
                     }
                 }
-                this->value=i->types.back();
+                this->value = i->types.back();
                 return;
             }
             else
@@ -381,25 +397,25 @@ Statment::Statment(Exp *exp)
 Statment::Statment(std::string str)
 {
     for (int i = tablesStack.size() - 1; i >= 0; i--)
+    {
+        for (int j = 0; j < tablesStack[i]->lines.size(); ++j)
         {
-            for (int j = 0; j < tablesStack[i]->lines.size(); ++j)
+            if (tablesStack[i]->lines[j]->name == currFunc)
             {
-                if (tablesStack[i]->lines[j]->name == currFunc)
+                int size = tablesStack[i]->lines[j]->types.size();
+                if (tablesStack[i]->lines[j]->types[size - 1] == str)
                 {
-                    int size = tablesStack[i]->lines[j]->types.size();
-                    if (tablesStack[i]->lines[j]->types[size - 1] == str)
-                    {
-                        data = "ret void";
-                        return;
-                    }
-                    else
-                    {
-                        output::errorMismatch(yylineno);
-                        exit(0);
-                    }
+                    data = "ret void";
+                    return;
+                }
+                else
+                {
+                    output::errorMismatch(yylineno);
+                    exit(0);
                 }
             }
         }
+    }
     output::errorUndef(yylineno, "");
     exit(0);
 }
@@ -410,16 +426,23 @@ Statment::Statment(Node *id, Exp *exp)
         for (int j = 0; j < tablesStack[i]->lines.size(); ++j)
         {
             if (tablesStack[i]->lines[j]->name == id->value)
-            {   
+            {
                 if (tablesStack[i]->lines[j]->types.size() == 1)
                 {
                     if ((tablesStack[i]->lines[j]->types[0] == "INT" && exp->type == "BYTE") || (tablesStack[i]->lines[j]->types[0] == exp->type))
+                    {
                         data = exp->value;
-                    return;
+                        return;
+                    }
+                    else
+                    {
+                        output::errorMismatch(yylineno);
+                        exit(0);
+                    }
                 }
                 else
                 {
-                    output::errorMismatch(yylineno);
+                    output::errorUndef(yylineno, id->value);
                     exit(0);
                 }
             }
@@ -461,7 +484,7 @@ Statment::Statment(Type *type, Node *id)
     tablesStack.back()->lines.emplace_back(temp);
 }
 FuncDecl::FuncDecl(RetType *ret_type, Node *id, Formals *formals)
-{
+{   
     if (idExists(id->value))
     {
         output::errorDef(yylineno, id->value);
@@ -469,9 +492,14 @@ FuncDecl::FuncDecl(RetType *ret_type, Node *id, Formals *formals)
     }
     for (int i = 0; i < formals->list.size(); i++)
     {
-        if (idExists(formals->list[i]->value) || formals->list[i]->value == id->value)
+        if (formals->list[i]->value == id->value)
         {
             output::errorDef(yylineno, id->value);
+            exit(0);
+        }
+        if (idExists(formals->list[i]->value))
+        {
+            output::errorDef(yylineno, formals->list[i]->value);
             exit(0);
         }
         for (int j = i + 1; j < formals->list.size(); ++j)

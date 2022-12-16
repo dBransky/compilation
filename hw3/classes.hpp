@@ -83,12 +83,19 @@ public:
 class RetType : public Node
 {
 public:
-    RetType(Node *type) : Node(type->value){};
+    RetType(Node *type) : Node(type->value){
+    if(type->value!="VOID"&&type->value!="INT"&&type->value!="BYTE"&&type->value!="BOOL")
+    {
+        output::errorSyn(yylineno);
+        exit(0);
+    }
+    };
 };
 class Funcs : public Node
 {
 public:
-    Funcs(){};
+    Funcs(){
+    };
 };
 class Program : public Node
 {
