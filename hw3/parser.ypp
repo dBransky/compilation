@@ -77,12 +77,13 @@ Type : 		 			 INT {$$= new Type ($1);}//
 								 | BYTE {$$= new Type ($1);}
 								 | BOOL {$$= new Type ($1);};
 Exp :      	  	 LPAREN Exp RPAREN {$$= new Exp(dynamic_cast<Exp*> ($2));}
-								 | ID {$$= new Exp($1);}
-								 | Exp RELOPL Exp {$$= new Exp(dynamic_cast<Exp*> ($1),$2,dynamic_cast<Exp*> ($3),"RELOPL");}
-								 | Exp IF LPAREN Exp RPAREN ELSE Exp {$$= new Exp(dynamic_cast<Exp*> ($1),dynamic_cast<Exp*> ($4),dynamic_cast<Exp*> ($7));}
-								 | Exp RELOPN Exp {$$= new Exp(dynamic_cast<Exp*> ($1),$2,dynamic_cast<Exp*> ($3),"RELOPN");}
+							   	 | LPAREN Type RPAREN Exp {$$= new Exp(dynamic_cast<Type*> ($2),dynamic_cast<Exp*> ($4));};
   						   		 | Exp ADD Exp {$$= new Exp(dynamic_cast<Exp*> ($1),$2,dynamic_cast<Exp*> ($3),"ADD");}
 								 | Exp MUL Exp {$$= new Exp(dynamic_cast<Exp*> ($1),$2,dynamic_cast<Exp*> ($3),"MUL");}
+								 | Exp RELOPL Exp {$$= new Exp(dynamic_cast<Exp*> ($1),$2,dynamic_cast<Exp*> ($3),"RELOPL");}
+								 | ID {$$= new Exp($1);}
+								 | Exp IF LPAREN Exp RPAREN ELSE Exp {$$= new Exp(dynamic_cast<Exp*> ($1),dynamic_cast<Exp*> ($4),dynamic_cast<Exp*> ($7));}
+								 | Exp RELOPN Exp {$$= new Exp(dynamic_cast<Exp*> ($1),$2,dynamic_cast<Exp*> ($3),"RELOPN");}
 								 | Call {$$= new Exp(dynamic_cast<Call*> ($1));}
 								 | NUM {$$= new Exp($1,"num");}
 								 | NUM B {$$= new Exp($1,"B");}
@@ -92,7 +93,6 @@ Exp :      	  	 LPAREN Exp RPAREN {$$= new Exp(dynamic_cast<Exp*> ($2));}
 								 | NOT Exp {$$= new Exp($1,dynamic_cast<Exp*> ($2));}
 								 | Exp AND Exp {$$= new Exp(dynamic_cast<Exp*> ($1),$2,dynamic_cast<Exp*> ($3),"AND");}
 								 | Exp OR Exp {$$= new Exp(dynamic_cast<Exp*> ($1),$2,dynamic_cast<Exp*> ($3),"OR");}
-							   	 | LPAREN Type RPAREN Exp {$$= new Exp(dynamic_cast<Type*> ($2),dynamic_cast<Exp*> ($4));};
 
 FOO: Exp{$$= new Exp(dynamic_cast<Exp*>($1),"STR");};
 OS:						 		{openScope();};
