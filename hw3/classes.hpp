@@ -155,6 +155,19 @@ public:
     Exp(Call *call);
     Exp(Node *term, std::string str);
 };
+class IfStart:public Node{
+public:
+    std::string data;
+    IfStart(std::string str, Exp *exp)
+    {
+        if (exp->type != "BOOL")
+        {
+            output::errorMismatch(yylineno);
+            exit(0);
+        }
+        this->data = "if/else";
+    }
+};
 class Statment : public Node
 {
 public:
@@ -181,6 +194,10 @@ public:
             exit(0);
         }
         this->data = "if/else";
+        
+    }
+    Statment(IfStart* if_start){
+        this->data="if/else";
     }
 };
 class Call : public Node

@@ -25,22 +25,22 @@
 %nonassoc ID;
 %nonassoc NUM;
 %nonassoc STRING;
-%nonassoc RELOPN;
 %nonassoc XXX;
 %nonassoc XX;
-%nonassoc IF;
-%left LPAREN;
-%left RPAREN;
-%nonassoc ELSE;
+
 %right ASSIGN;
+%right IF;
+%right EPSILON_ELSE ELSE;
 %left OR;
 %left AND;
 %left RELOPL;
-%left ADD;
+%right ADD;
 %left MUL;
 %right NOT;
-%nonassoc LBRACE;
-%nonassoc RBRACE;
+%left LBRACE;
+%left RPAREN;
+%right RBRACE;
+%right LPAREN;
 
 %%
 
@@ -64,11 +64,12 @@ Statment : 		 LBRACE OS Statments CS RBRACE {$$= new Statment (dynamic_cast<Stat
 								 | Call SC {$$= new Statment (dynamic_cast<Call*> ($1));}
 								 | RETURN SC {$$= new Statment ("VOID");}
 								 | RETURN Exp SC {$$= new Statment (dynamic_cast<Exp*> ($2));}
-								 | IF LPAREN FOO RPAREN OS Statment {$$= new Statment ("if", dynamic_cast<Exp*> ($3)); closeScope();}  
-								 | IF LPAREN FOO RPAREN OS Statment ELSE {$$= new Statment ("if else", dynamic_cast<Exp*> ($3));}  OS{closeScope();} Statment CS    
+								 | IfStart Statment %prec XX {$$= new Statment (dynamic_cast<IfStart*>($1));closeScope();}  
+								 | IfStart  Statment ELSE {$$= new Statment (dynamic_cast<IfStart*>($1));}  OS{closeScope();} Statment CS    
 								 | WHILE LPAREN Exp RPAREN {$$= new Statment ("while", dynamic_cast<Exp*> ($3));inLoop();} OS Statment CS { outLoop();}
 								 | BREAK SC {$$= new Statment ($1);}
 								 | CONTINUE SC {$$= new Statment ($1);};
+IfStart: IF LPAREN Exp RPAREN OS {$$= new IfStart ("if", dynamic_cast<Exp*> ($3));}
 Call :       	   ID LPAREN ExpList RPAREN {$$= new Call ($1,dynamic_cast<ExpList*> ($3));}
 								 | ID LPAREN RPAREN {$$= new Call ($1);};
 ExpList : 		 	 Exp {$$= new ExpList (dynamic_cast<Exp*> ($1));}
@@ -76,25 +77,24 @@ ExpList : 		 	 Exp {$$= new ExpList (dynamic_cast<Exp*> ($1));}
 Type : 		 			 INT {$$= new Type ($1);}//
 								 | BYTE {$$= new Type ($1);}
 								 | BOOL {$$= new Type ($1);};
-Exp :      	  	 LPAREN Exp RPAREN {$$= new Exp(dynamic_cast<Exp*> ($2));}
-							   	 | LPAREN Type RPAREN Exp {$$= new Exp(dynamic_cast<Type*> ($2),dynamic_cast<Exp*> ($4));};
-  						   		 | Exp ADD Exp {$$= new Exp(dynamic_cast<Exp*> ($1),$2,dynamic_cast<Exp*> ($3),"ADD");}
-								 | Exp MUL Exp {$$= new Exp(dynamic_cast<Exp*> ($1),$2,dynamic_cast<Exp*> ($3),"MUL");}
-								 | Exp RELOPL Exp {$$= new Exp(dynamic_cast<Exp*> ($1),$2,dynamic_cast<Exp*> ($3),"RELOPL");}
-								 | ID {$$= new Exp($1);}
+Exp :      	  	 
+								  ID {$$= new Exp($1);}
 								 | Exp IF LPAREN Exp RPAREN ELSE Exp {$$= new Exp(dynamic_cast<Exp*> ($1),dynamic_cast<Exp*> ($4),dynamic_cast<Exp*> ($7));}
-								 | Exp RELOPN Exp {$$= new Exp(dynamic_cast<Exp*> ($1),$2,dynamic_cast<Exp*> ($3),"RELOPN");}
 								 | Call {$$= new Exp(dynamic_cast<Call*> ($1));}
 								 | NUM {$$= new Exp($1,"num");}
 								 | NUM B {$$= new Exp($1,"B");}
   						   		 | STRING {$$= new Exp($1,"STRING");}
 								 | TRUE {$$= new Exp($1,"BOOL");}
 								 | FALSE {$$= new Exp($1,"BOOL");}
-								 | NOT Exp {$$= new Exp($1,dynamic_cast<Exp*> ($2));}
 								 | Exp AND Exp {$$= new Exp(dynamic_cast<Exp*> ($1),$2,dynamic_cast<Exp*> ($3),"AND");}
 								 | Exp OR Exp {$$= new Exp(dynamic_cast<Exp*> ($1),$2,dynamic_cast<Exp*> ($3),"OR");}
+								 | Exp RELOPL Exp {$$= new Exp(dynamic_cast<Exp*> ($1),$2,dynamic_cast<Exp*> ($3),"RELOPL");}
+  						   		 | Exp ADD Exp {$$= new Exp(dynamic_cast<Exp*> ($1),$2,dynamic_cast<Exp*> ($3),"ADD");}
+								 | Exp MUL Exp {$$= new Exp(dynamic_cast<Exp*> ($1),$2,dynamic_cast<Exp*> ($3),"MUL");}
+								 | LPAREN Type RPAREN Exp {$$= new Exp(dynamic_cast<Type*> ($2),dynamic_cast<Exp*> ($4));};
+								 | NOT Exp {$$= new Exp($1,dynamic_cast<Exp*> ($2));}
+								 | LPAREN Exp RPAREN {$$= new Exp(dynamic_cast<Exp*> ($2));}
 
-FOO: Exp{$$= new Exp(dynamic_cast<Exp*>($1),"STR");};
 OS:						 		{openScope();};
 CS:								{closeScope();};
 
