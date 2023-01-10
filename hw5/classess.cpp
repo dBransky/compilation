@@ -696,9 +696,28 @@ Program::Program()
     global->lines.emplace_back(printi);
     tablesStack.emplace_back(global);
     offsetsStack.emplace_back(0);
+    buffer.emitGlobal("declare i32 @printf(i8*, ...)");
+    buffer.emitGlobal("declare void @exit(i32)");
+    buffer.emitGlobal("@.int_specifier = constant [4 x i8] c\"%d\\0A\\00\"");
+    buffer.emitGlobal("@.str_specifier = constant [4 x i8] c\"%s\\0A\\00\"");
+    buffer.emitGlobal("@DavidThrowsZeroExcp = constant [22 x i8] c\"Error division by zero\"");
+    buffer.emitGlobal("define void @printi(i32) {");
+    buffer.emitGlobal(
+        "call i32 (i8*, ...) @printf(i8* getelementptr ([4 x i8], [4 x i8]* @.int_specifier, i32 0, i32 0), i32 %0)");
+    buffer.emitGlobal("ret void");
+    buffer.emitGlobal("}");
+    buffer.emitGlobal("define void @print(i8*) {");
+    buffer.emitGlobal(
+        "call i32 (i8*, ...) @printf(i8* getelementptr ([4 x i8], [4 x i8]* @.str_specifier, i32 0, i32 0), i8* %0)");
+    buffer.emitGlobal("ret void");
+    buffer.emitGlobal("}");
 }
 Statment::Statment(Node *term)
 {
+    vector<pair<int, BranchLabelIndex>> list_break;
+    vector<pair<int, BranchLabelIndex>> list_continue;
+    this->break_list = list_break;
+    this->continue_list = list_continue;
     if (loopCount == 0)
     {
         if (term->value == "break")
@@ -709,9 +728,19 @@ Statment::Statment(Node *term)
         output::errorUnexpectedContinue(yylineno);
         exit(0);
     }
+    int location = buffer.emit("br label @");
+    if (term->value == "break")
+        this->break_list = buffer.makelist({location, FIRST});
+    else
+        this->continue_list = buffer.makelist({location, FIRST});
     data = "break";
 }
-
+Statment *add_else_statment(Statment *if_statment, Statment *else_statment)
+{
+    if_statment->break_list = buffer.merge(if_statment->break_list, else_statment->break_list);
+    if_statment->continue_list = buffer.merge(if_statment->continue_list, else_statment->continue_list);
+    return if_statment;
+}
 Statment::Statment(Exp *exp)
 {
     if (exp->type == "VOID")
@@ -748,8 +777,54 @@ Statment::Statment(Exp *exp)
     output::errorUndef(yylineno, "");
     exit(0);
 }
+Statments::Statments(Statment *statment)
+{
+    this->break_list = statment->break_list;
+    this->continue_list = statment->continue_list;
+}
+Statments::Statments(Statments *statments, Statment *statment)
+{
+    this->break_list = buffer.merge(statments->break_list, statment->break_list);
+    this->continue_list = buffer.merge(statments->continue_list, statment->break_list);
+}
+string emitting(string data, string type, int offset)
+{
+    string reg = regsPool.get_reg();
+    string data_reg = data;
+    string arg_type = getLLVMPrimitiveType(type);
+    if (arg_type != "i32")
+    {
+        data_reg = regsPool.get_reg();
+        buffer.emit(
+            "%" + data_reg + " = zext " + arg_type + " %" + data + " to i32");
+    }
+    buffer.emit("%" + reg + " = add i32 0,%" + data_reg);
+    string ptr = regsPool.get_reg();
+    if (offset >= 0)
+    {
+        buffer.emit(
+            "%" + ptr +
+            " = getelementptr [ 50 x i32], [ 50 x i32]* %stack, i32 0, i32 " +
+            to_string(offset));
+    }
+    else if (offset < 0 && amountOfCurrArgs > 0)
+    {
+        buffer.emit(
+            "%" + ptr + " = getelementptr [ " + to_string(amountOfCurrArgs) +
+            " x i32], [ " +
+            to_string(amountOfCurrArgs) +
+            " x i32]* %args, i32 0, i32 " +
+            to_string(amountOfCurrArgs + offset));
+    }
+    buffer.emit("store i32 %" + reg + ", i32* %" + ptr);
+    return reg;
+}
 Statment::Statment(std::string str)
 {
+    vector<pair<int, BranchLabelIndex>> list_break;
+    vector<pair<int, BranchLabelIndex>> list_continue;
+    this->break_list = list_break;
+    this->continue_list = list_continue;
     for (int i = tablesStack.size() - 1; i >= 0; i--)
     {
         for (int j = 0; j < tablesStack[i]->lines.size(); ++j)
@@ -760,6 +835,7 @@ Statment::Statment(std::string str)
                 if (tablesStack[i]->lines[j]->types[size - 1] == str)
                 {
                     data = "ret void";
+                    buffer.emit("ret void");
                     return;
                 }
                 else
@@ -775,6 +851,10 @@ Statment::Statment(std::string str)
 }
 Statment::Statment(Node *id, Exp *exp)
 {
+    vector<pair<int, BranchLabelIndex>> list_break;
+    vector<pair<int, BranchLabelIndex>> list_continue;
+    this->break_list = list_break;
+    this->continue_list = list_continue;
     for (int i = tablesStack.size() - 1; i >= 0; i--)
     {
         for (int j = 0; j < tablesStack[i]->lines.size(); ++j)
@@ -786,6 +866,8 @@ Statment::Statment(Node *id, Exp *exp)
                     if ((tablesStack[i]->lines[j]->types[0] == "INT" && exp->type == "BYTE") || (tablesStack[i]->lines[j]->types[0] == exp->type))
                     {
                         data = exp->value;
+                        this->inst = exp->inst;
+                        this->reg = emitting(exp->reg, exp->type, tablesStack[i]->lines[j]->offset);
                         return;
                     }
                     else
@@ -807,6 +889,10 @@ Statment::Statment(Node *id, Exp *exp)
 }
 Statment::Statment(Type *type, Node *id, Exp *exp)
 {
+    vector<pair<int, BranchLabelIndex>> list_break;
+    vector<pair<int, BranchLabelIndex>> list_continue;
+    this->break_list = list_break;
+    this->continue_list = list_continue;
     if (exp->type != type->value)
     {
         if (type->value != "INT" || exp->type != "BYTE")
@@ -824,9 +910,37 @@ Statment::Statment(Type *type, Node *id, Exp *exp)
     int offset = offsetsStack.back()++;
     auto temp = shared_ptr<SBEntry>(new SBEntry(id->value, type->value, offset));
     tablesStack.back()->lines.emplace_back(temp);
+    this->reg = regsPool.get_reg();
+    string expType = getLLVMPrimitiveType(type->value);
+    string date_reg = exp->reg;
+    if (type->value == "INT" && exp->type == "BYTE")
+    {
+
+        date_reg = regsPool.get_reg();
+        buffer.emit("%" + date_reg + " = zext i8 %" + exp->reg + " to i32");
+    }
+    buffer.emit("%" + this->reg + " = add " + expType + " 0,%" +
+                date_reg);
+    string ptr = regsPool.get_reg();
+    buffer.emit("%" + ptr +
+                " = getelementptr [50 x i32], [50 x i32]* %stack, i32 0, i32 " +
+                to_string(offset));
+    date_reg = reg;
+    if (expType != "i32")
+    {
+
+        date_reg = regsPool.get_reg();
+        buffer.emit(
+            "%" + date_reg + " = zext " + expType + " %" + reg + " to i32");
+    }
+    buffer.emit("store i32 %" + date_reg + ", i32* %" + ptr);
 }
 Statment::Statment(Type *type, Node *id)
 {
+    vector<pair<int, BranchLabelIndex>> list_break;
+    vector<pair<int, BranchLabelIndex>> list_continue;
+    this->break_list = list_break;
+    this->continue_list = list_continue;
     if (idExists(id->value))
     {
         output::errorDef(yylineno, id->value);
@@ -836,6 +950,24 @@ Statment::Statment(Type *type, Node *id)
     int offset = offsetsStack.back()++;
     auto temp = shared_ptr<SBEntry>(new SBEntry(id->value, type->value, offset));
     tablesStack.back()->lines.emplace_back(temp);
+    this->reg = regsPool.get_reg();
+    string exp_type = getLLVMPrimitiveType(type->value);
+    buffer.emit("%" + this->reg + " = add " + exp_type +
+                " 0,0");
+    string ptr = regsPool.get_reg();
+
+    buffer.emit("%" + ptr +
+                " = getelementptr [50 x i32], [50 x i32]* %stack, i32 0, i32 " +
+                to_string(offset));
+    string date_reg = reg;
+    if (exp_type != "i32")
+    {
+
+        date_reg = regsPool.get_reg();
+        buffer.emit(
+            "%" + date_reg + " = zext " + exp_type + " %" + reg + " to i32");
+    }
+    buffer.emit("store i32 %" + date_reg + ", i32* %" + ptr);
 }
 FuncDecl::FuncDecl(RetType *ret_type, Node *id, Formals *formals)
 {   
@@ -882,5 +1014,47 @@ FuncDecl::FuncDecl(RetType *ret_type, Node *id, Formals *formals)
     auto temp = shared_ptr<SBEntry>(new SBEntry(this->value, this->types, 0));
     tablesStack.back()->lines.push_back(temp);
     currFunc = id->value;
+    amountOfCurrArgs = formals->list.size();
+    string arg_string = ("(");
+    if (formals->list.size() != 0)
+    {
+        for (int i = 0; i < formals->list.size(); i++)
+        {
+            arg_string += getLLVMPrimitiveType(formals->list[i]->type) + ",";
+        }
+        arg_string.back() = ')';
+    }
+    else
+    {
+        arg_string.append(")");
+    }
+    string ret_type_string = getLLVMPrimitiveType(ret_type->value);
+    buffer.emit(
+        "define " + ret_type_string + " @" + this->value + arg_string + " {");
+
+    buffer.emit("%stack = alloca [50 x i32]");
+    buffer.emit("%args = alloca [" + to_string(formals->list.size()) +
+                " x i32]");
+    int size = formals->list.size();
+    for (int i = 0; i < size; i++)
+    {
+        string ptr_reg = regsPool.get_reg();
+
+        buffer.emit(
+            "%" + ptr_reg + " = getelementptr [" + to_string(size) +
+            " x i32], [" + to_string(size) +
+            " x i32]* %args, i32 0, i32 " +
+            to_string(amountOfCurrArgs - i - 1));
+        string date_reg = to_string(i);
+        string arg_type = getLLVMPrimitiveType(formals->list[i]->type);
+        if (arg_type != "i32")
+        {
+
+            date_reg = regsPool.get_reg();
+            buffer.emit("%" + date_reg + " = zext " + arg_type + " %" + to_string(i) + " to i32");
+        }
+
+        buffer.emit("store i32 %" + date_reg + ", i32* %" + ptr_reg);
+    }
 }
 #endif
