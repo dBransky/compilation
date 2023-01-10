@@ -46,7 +46,7 @@
 Program :		  	 {$$= new Program();} Funcs {if (yychar == YYEOF){endProgram();}};
 Funcs :	     	    
 								 | FuncDecl Funcs %prec XX{$$= new Funcs ();};
-FuncDecl :   	   RetType ID LPAREN Formals RPAREN {$$= new FuncDecl(dynamic_cast<RetType*>($1),$2,dynamic_cast<Formals*>($4));} LBRACE OS {enterArguments(dynamic_cast<Formals*>($4));} Statments CS {endFunc();} RBRACE ;
+FuncDecl :   	   RetType ID LPAREN Formals RPAREN {$$= new FuncDecl(dynamic_cast<RetType*>($1),$2,dynamic_cast<Formals*>($4));} LBRACE OS {enterArguments(dynamic_cast<Formals*>($4));} Statments CS {endFunc(dynamic_cast<RetType*>($1));} RBRACE ;
 RetType : 	  	 Type {$$= new RetType(dynamic_cast<Type*> ($1));}
 								 | VOID {$$= new RetType($1);};
 Formals :     	   {$$= new Formals ();}
@@ -63,9 +63,9 @@ Statment : 		 LBRACE OS Statments CS RBRACE {$$= new Statment (dynamic_cast<Stat
 								 | Call SC {$$= new Statment (dynamic_cast<Call*> ($1));}
 								 | RETURN SC {$$= new Statment ("VOID");}
 								 | RETURN Exp SC {$$= new Statment (dynamic_cast<Exp*> ($2));}
-								 | IF LPAREN FRUIT RPAREN OS M Statment {$$= new Statment ("if", dynamic_cast<Exp*> ($3), dynamic_cast<Statment*> ($7)); closeScope(); ifBp(dynamic_cast<M*> ($6), dynamic_cast<Exp*> ($3));}//done
-								 | IF LPAREN FRUIT RPAREN OS M Statment ELSE {$$= new Statment ("if else", dynamic_cast<Exp*> ($3), dynamic_cast<Statment*>($7)); closeScope();} OS N Statment CS {ifElseBp(dynamic_cast<M*> ($6), dynamic_cast<N*> ($11), dynamic_cast<Exp*> ($3));$$ = addElseStatment(dynamic_cast<Statment*>($9), dynamic_cast<Statment*>($12));}
-								 | WHILE LPAREN N Exp RPAREN {$$= docompare(dynamic_cast<Exp*> ($4));}{$$= new Statment ("while", dynamic_cast<Exp*> ($4));inLoop();} OS Statment CS { outLoop(dynamic_cast<N*> ($3),dynamic_cast<P*> ($6),dynamic_cast<Statment*> ($9));}
+								 | IfStart M Statment %prec XX {$$= new Statment (dynamic_cast<IfStart*>($1));closeScope(); if_bp(dynamic_cast<M*>($2),dynamic_cast<IfStart*>($1));}  
+								 | IfStart M Statment ELSE {$$= new Statment (dynamic_cast<IfStart*>($1));}  OS{closeScope();} N Statment CS {if_else_bp(dynamic_cast<M*>($2),dynamic_cast<N*>($6),dynamic_cast<IfStart*>($1));$$=add_else_statment(dynamic_cast<Statment*>($3),dynamic_cast<Statment*>($7));}
+								 | WHILE LPAREN N Exp RPAREN {$$= doc_compare(dynamic_cast<Exp*> ($4));}{$$= new Statment ("while", dynamic_cast<Exp*> ($4));inLoop();} OS Statment CS { outLoop(dynamic_cast<N*> ($3),dynamic_cast<P*> ($6),dynamic_cast<Statment*> ($9));}
 								 | BREAK SC {$$= new Statment ($1);}
 								 | CONTINUE SC {$$= new Statment ($1);};
 IfStart: IF LPAREN Exp RPAREN OS {$$= new IfStart ("if", dynamic_cast<Exp*> ($3));}
@@ -85,15 +85,14 @@ Exp :
   						   		 | STRING {$$= new Exp($1,"STRING");}
 								 | TRUE {$$= new Exp($1,"BOOL");}
 								 | FALSE {$$= new Exp($1,"BOOL");}
-								 | Exp AND {$$= docompare(dynamic_cast<Exp*> ($1));} Exp {$$= new Exp(dynamic_cast<Exp*> ($1),$2,dynamic_cast<Exp*> ($3),"AND");}
-								 | Exp OR {$$= docompare(dynamic_cast<Exp*> ($1));} Exp {$$= new Exp(dynamic_cast<Exp*> ($1),$2,dynamic_cast<Exp*> ($3),"OR");}
+								 | Exp AND {$$= doc_compare(dynamic_cast<Exp*> ($1));} Exp {$$= new Exp(dynamic_cast<Exp*> ($1),$2,dynamic_cast<Exp*> ($3),"AND");}
+								 | Exp OR {$$= doc_compare(dynamic_cast<Exp*> ($1));} Exp {$$= new Exp(dynamic_cast<Exp*> ($1),$2,dynamic_cast<Exp*> ($3),"OR");}
 								 | Exp RELOPL Exp {$$= new Exp(dynamic_cast<Exp*> ($1),$2,dynamic_cast<Exp*> ($3),"RELOPL");}
   						   		 | Exp ADD Exp {$$= new Exp(dynamic_cast<Exp*> ($1),$2,dynamic_cast<Exp*> ($3),"ADD");}
 								 | Exp MUL Exp {$$= new Exp(dynamic_cast<Exp*> ($1),$2,dynamic_cast<Exp*> ($3),"MUL");}
 								 | LPAREN Type RPAREN Exp {$$= new Exp(dynamic_cast<Type*> ($2),dynamic_cast<Exp*> ($4));};
 								 | NOT Exp {$$= new Exp($1,dynamic_cast<Exp*> ($2));}
 								 | LPAREN Exp RPAREN {$$= new Exp(dynamic_cast<Exp*> ($2));}
-FRUIT:	Exp {$$= new Exp(dynamic_cast<Exp*>($1),"STRING");};
 OS:						 		{openScope();};
 CS:								{closeScope();};
 M:                              {$$ = new M();};

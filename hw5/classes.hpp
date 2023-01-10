@@ -12,15 +12,11 @@
 #include "reg_pool.hpp"
 extern int yylineno;
 void inLoop();
-void outLoop(N *first_l, P *second_l, Statment *Statement);
 void openScope();
 void closeScope();
 void endProgram();
 bool idExists(string str);
 string getLLVMPrimitiveType(string type);
-Node *doc_compare(Exp *left);
-void if_bp(M *label1, Exp *exp);
-void if_else_bp(M *label1, M *label2, Exp *exp);
 
 class SBEntry
 {
@@ -53,8 +49,16 @@ class Exp;
 class Call;
 class ExpList;
 class P;
+class N;
+class M;
+class Node;
+class IfStart;
+void endFunc(RetType* type);
+Node *doc_compare(Exp *left);
+void if_bp(M *label1, IfStart *if_start);
+void if_else_bp(M *label1, N *label2, IfStart *if_start);
+void outLoop(N *first_l, P *second_l, Statment *Statement);
 void enterArguments(Formals *fm);
-void endFunc();
 Statment *add_else_statment(Statment *if_statment, Statment *else_statment);
 class SymbolTable
 {
@@ -200,8 +204,12 @@ class IfStart : public Node
 {
 public:
     std::string data;
+    vector<pair<int, BranchLabelIndex>> truelist;
+    vector<pair<int, BranchLabelIndex>> falselist;
     IfStart(std::string str, Exp *exp)
     {
+        this->truelist=exp->truelist;
+        this->falselist=exp->falselist;
         if (exp->type != "BOOL")
         {
             output::errorMismatch(yylineno);
@@ -241,7 +249,7 @@ public:
     }
     Statment(std::string str);
     Statment(Exp *exp);
-    Statment(std::string str, Exp *exp, Statment *statment)
+    Statment(std::string str, Exp *exp, Statment *statment=nullptr)
     {
         vector<pair<int, BranchLabelIndex>> list_break;
         vector<pair<int, BranchLabelIndex>> list_continue;
