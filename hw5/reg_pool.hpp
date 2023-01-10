@@ -12,5 +12,5 @@ class RegPool
     {
         return "t" + to_string(current++);
     }
-}
+};
 #endif
