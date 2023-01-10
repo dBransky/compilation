@@ -31,45 +31,44 @@ void enterArguments(Formals *fm)
     }
 }
 
-string getLLVMPrimitiveType(string prmType) 
+string getLLVMPrimitiveType(string prmType)
 {
-    if (prmType == "VOID") 
-	{
+    if (prmType == "VOID")
+    {
         return "void";
-	} 
-	else 
-	if (prmType == "STRING") 
-	{
+    }
+    else if (prmType == "STRING")
+    {
         return "i8*";
-    } 
-	else if (prmType == "BYTE") 
-	{
+    }
+    else if (prmType == "BYTE")
+    {
         return "i8";
-    } 
-	else if (prmType == "BOOL") 
-	{
+    }
+    else if (prmType == "BOOL")
+    {
         return "i1";
     }
-	else 
-	{
-		return "i32"; 
-	}
+    else
+    {
+        return "i32";
+    }
 }
 
-void endFunc(RetType* type) 
+void endFunc(RetType *type)
 {
-	currFunc = "";
-	amountOfCurrArgs = 0; 
-    if (type->value == "VOID") 
+    currFunc = "";
+    amountOfCurrArgs = 0;
+    if (type->value == "VOID")
     {
         buffer.emit("ret void");
-    } 
-    else 
+    }
+    else
     {
         string returnType = getLLVMPrimitiveType(type->value);
         buffer.emit("ret " + returnType + " 0");
     }
-	buffer.emit("}");
+    buffer.emit("}");
 }
 
 int loopCount = 0;
@@ -78,25 +77,25 @@ void inLoop()
     loopCount++;
 }
 
-void outLoop(N* first_l, P* second_l, Statment* statement)
+void outLoop(N *first_l, P *second_l, Statment *statement)
 {
-	int labelLoc = buffer.emit("br label @");
+    int labelLoc = buffer.emit("br label @");
     string genLabelStr = buffer.genLabel();
     buffer.bpatch(buffer.makelist({first_l->location, FIRST}), first_l->inst);
     buffer.bpatch(buffer.makelist({second_l->location, FIRST}), second_l->inst);
     buffer.bpatch(buffer.makelist({second_l->location, SECOND}), genLabelStr);
     buffer.bpatch(buffer.makelist({labelLoc, FIRST}), second_l->inst);
-	int breakListSize = statement->break_list.size();
-	int continuteListSize = statement->continue_list.size();
-    if (breakListSize != 0) 
-	{
+    int breakListSize = statement->break_list.size();
+    int continuteListSize = statement->continue_list.size();
+    if (breakListSize != 0)
+    {
         buffer.bpatch(statement->break_list, genLabelStr);
     }
-    if (continuteListSize != 0) 
-	{
+    if (continuteListSize != 0)
+    {
         buffer.bpatch(statement->continue_list, first_l->inst);
     }
-	loopCount--;
+    loopCount--;
 }
 
 void openScope()
@@ -125,7 +124,7 @@ void closeScope()
                 i->types.pop_back();
             }
 
-           // output::printID(i->name, i->offset, output::makeFunctionType(retVal, i->types));
+            // output::printID(i->name, i->offset, output::makeFunctionType(retVal, i->types));
         }
     }
     while (scope->lines.size() != 0)
@@ -163,16 +162,19 @@ void endProgram()
     buffer.printCodeBuffer();
 }
 
-M::M() {
+M::M()
+{
     this->inst = buffer.genLabel();
 }
 
-N::N() {
+N::N()
+{
     this->location = buffer.emit("br label @");
     this->inst = buffer.genLabel();
 }
 
-P::P(Exp *left) {
+P::P(Exp *left)
+{
     this->location = buffer.emit("br i1 %" + left->reg + ", label @, label @");
     this->inst = buffer.genLabel();
 }
@@ -221,7 +223,7 @@ Exp::Exp(Node *_not, Exp *exp)
     this->truelist = exp->falselist;
 }
 
-Exp::Exp(Exp *left, Node *op, Exp *right, string str, P *shortC) 
+Exp::Exp(Exp *left, Node *op, Exp *right, string str, P *shortC)
 {
     this->type = "";
     this->reg = regsPool.get_reg();
@@ -230,87 +232,87 @@ Exp::Exp(Exp *left, Node *op, Exp *right, string str, P *shortC)
     this->falselist = listFalse;
     vector<pair<int, BranchLabelIndex>> listTrue;
     this->truelist = listTrue;
-    if ((left->type == "BYTE" || left->type == "INT") && (right->type == "BYTE" || right->type == "INT")) 
+    if ((left->type == "BYTE" || left->type == "INT") && (right->type == "BYTE" || right->type == "INT"))
     {
         if (str == "RELOPL" || str == "RELOPN")
         {
             this->type = "BOOL";
             string iSize = "i8";
-            if (left->type == "INT" || right->type == "INT") 
+            if (left->type == "INT" || right->type == "INT")
             {
                 iSize = "i32";
             }
             string relop;
-            if (op->value == "==") 
+            if (op->value == "==")
             {
                 relop = "eq";
             }
-            else if (op->value == "!=") 
-             {
+            else if (op->value == "!=")
+            {
                 relop = "ne";
-            } 
-            else if (op->value == "<") 
+            }
+            else if (op->value == "<")
             {
                 relop = "slt";
-                if (iSize == "i8") 
+                if (iSize == "i8")
                 {
                     relop = "ult";
                 }
-            } 
-            else if (op->value == ">") 
+            }
+            else if (op->value == ">")
             {
                 relop = "sgt";
-                if (iSize == "i8") 
+                if (iSize == "i8")
                 {
                     relop = "ugt";
                 }
-            } 
-            else if (op->value == "<=") 
+            }
+            else if (op->value == "<=")
             {
                 relop = "sle";
-                if (iSize == "i8") 
+                if (iSize == "i8")
                 {
                     relop = "ule";
                 }
-            } 
-            else if (op->value == ">=") 
+            }
+            else if (op->value == ">=")
             {
                 relop = "sge";
-                if (iSize == "i8") 
+                if (iSize == "i8")
                 {
                     relop = "uge";
                 }
             }
             string leftReg = left->reg;
             string rightLeft = right->reg;
-            if (iSize == "i32") 
+            if (iSize == "i32")
             {
-                if (left->type == "BYTE") 
+                if (left->type == "BYTE")
                 {
                     leftReg = regsPool.get_reg();
                     buffer.emit("%" + leftReg + " = zext i8 %" + left->reg + " to i32");
                 }
-                if (right->type == "BYTE") 
+                if (right->type == "BYTE")
                 {
                     rightLeft = regsPool.get_reg();
                     buffer.emit("%" + rightLeft + " = zext i8 %" + right->reg + " to i32");
                 }
             }
             buffer.emit("%" + this->reg + " = icmp " + relop + " " + iSize + " %" + leftReg + ", %" + rightLeft);
-            if (right->inst != "") 
+            if (right->inst != "")
             {
                 end = right->inst;
-            } 
-            else 
+            }
+            else
             {
                 end = left->inst;
             }
         }
-        if (str == "ADD" || str == "MUL") 
+        if (str == "ADD" || str == "MUL")
         {
             this->type = "BYTE";
             string iSize = "i8";
-            if (left->type == "INT" || right->type == "INT") 
+            if (left->type == "INT" || right->type == "INT")
             {
                 this->type = "INT";
                 iSize = "i32";
@@ -319,27 +321,27 @@ Exp::Exp(Exp *left, Node *op, Exp *right, string str, P *shortC)
             string oper;
             string rightLeft = right->reg;
             string leftReg = left->reg;
-            if (op->value == "+") 
+            if (op->value == "+")
             {
                 oper = "add";
             }
-            else if (op->value.compare("-") == 0) 
+            else if (op->value.compare("-") == 0)
             {
                 oper = "sub";
-            } 
-            else if (op->value == "*") 
+            }
+            else if (op->value == "*")
             {
                 oper = "mul";
-            } 
-            else if (op->value == "/") 
+            }
+            else if (op->value == "/")
             {
                 string backupReg = regsPool.get_reg();
-                if (right->type == "BYTE") 
+                if (right->type == "BYTE")
                 {
                     rightLeft = regsPool.get_reg();
                     buffer.emit("%" + rightLeft + " = zext i8 %" + right->reg + " to i32");
                 }
-                if (left->type == "BYTE") 
+                if (left->type == "BYTE")
                 {
                     leftReg = regsPool.get_reg();
                     buffer.emit("%" + leftReg + " = zext i8 %" + left->reg + " to i32");
@@ -360,21 +362,21 @@ Exp::Exp(Exp *left, Node *op, Exp *right, string str, P *shortC)
                 oper = "sdiv";
                 end = second_label;
             }
-            if (iSize == "i32") 
+            if (iSize == "i32")
             {
-                if (left->type == "BYTE") 
+                if (left->type == "BYTE")
                 {
                     leftReg = regsPool.get_reg();
                     buffer.emit("%" + leftReg + " = zext i8 %" + left->reg + " to i32");
                 }
-                if (right->type == "BYTE") 
+                if (right->type == "BYTE")
                 {
                     rightLeft = regsPool.get_reg();
                     buffer.emit("%" + rightLeft + " = zext i8 %" + right->reg + " to i32");
                 }
             }
             buffer.emit("%" + this->reg + " = " + oper + " " + iSize + " %" + leftReg + ", %" + rightLeft);
-            if (oper == "sdiv" && right->type == "BYTE" && left->type == "BYTE") 
+            if (oper == "sdiv" && right->type == "BYTE" && left->type == "BYTE")
             {
                 string backLastRegsStr = regsPool.get_reg();
                 buffer.emit("%" + backLastRegsStr + " = trunc i32 %" + this->reg + " to i8");
@@ -382,19 +384,20 @@ Exp::Exp(Exp *left, Node *op, Exp *right, string str, P *shortC)
             }
         }
     }
-    else if ((left->type == "BOOL") && (right->type == "BOOL")) 
+    else if ((left->type == "BOOL") && (right->type == "BOOL"))
     {
         this->type = "BOOL";
-        if (str == "AND" || str == "OR") 
+        if (str == "AND" || str == "OR")
         {
-            if (right->inst != "") 
+            if (right->inst != "")
             {
                 this->inst = right->inst;
-            } else 
+            }
+            else
             {
                 this->inst = shortC->inst;
             }
-            if (op->value == "and") 
+            if (op->value == "and")
             {
                 int loc_bef = buffer.emit("br label @");
                 string leftFalseLabel = buffer.genLabel();
@@ -405,8 +408,8 @@ Exp::Exp(Exp *left, Node *op, Exp *right, string str, P *shortC)
                 buffer.bpatch(buffer.makelist({shortC->location, SECOND}), leftFalseLabel);
                 buffer.bpatch(buffer.makelist({loc_bef, FIRST}), endLabel);
                 buffer.bpatch(buffer.makelist({loc_aft, FIRST}), endLabel);
-            } 
-            else if (op->value.compare("or") == 0) 
+            }
+            else if (op->value.compare("or") == 0)
             {
                 int loc_bef = buffer.emit("br label @");
                 string leftTrueLabel = buffer.genLabel();
@@ -419,24 +422,22 @@ Exp::Exp(Exp *left, Node *op, Exp *right, string str, P *shortC)
                 buffer.bpatch(buffer.makelist({loc_aft, FIRST}), endLabel);
             }
         }
-         else 
+        else
         {
             output::errorMismatch(yylineno);
             exit(0);
         }
     }
-    else 
+    else
     {
         output::errorMismatch(yylineno);
         exit(0);
     }
-    if (end != "") 
+    if (end != "")
     {
         this->inst = end;
     }
 }
-
-
 
 Exp::Exp(Node *term, std::string str) : Node(term->value)
 {
@@ -457,8 +458,8 @@ Exp::Exp(Node *term, std::string str) : Node(term->value)
         int termSize = term->value.size();
         int lastPlace = termSize - 1;
         term->value[lastPlace] = '\00';
-        buffer.emitGlobal("@" + this->reg + "= constant [" + to_string(termSize-1) + " x i8] c" + term->value + "\"");
-        buffer.emit("%" + this->reg + "= getelementptr [" + to_string(termSize-1) + " x i8], [" + to_string(termSize-1) + " x i8]* @" + this->reg + ", i8 0, i8 0");
+        buffer.emitGlobal("@" + this->reg + "= constant [" + to_string(termSize - 1) + " x i8] c" + term->value + "\"");
+        buffer.emit("%" + this->reg + "= getelementptr [" + to_string(termSize - 1) + " x i8], [" + to_string(termSize - 1) + " x i8]* @" + this->reg + ", i8 0, i8 0");
     }
     if (str == "BOOL")
     {
@@ -488,8 +489,6 @@ Exp::Exp(Node *term, std::string str) : Node(term->value)
     }
 }
 
-
-
 Exp::Exp(Node *id)
 {
     vector<pair<int, BranchLabelIndex>> listFalse;
@@ -508,22 +507,22 @@ Exp::Exp(Node *id)
                 int offset = tablesStack[i]->lines[j]->offset;
                 string reg_1 = regsPool.get_reg();
                 string copyPtr = regsPool.get_reg();
-                if (offset >= 0) 
+                if (offset >= 0)
                 {
-                    buffer.emit("%" + copyPtr +" = getelementptr [ 50 x i32], [ 50 x i32]* %stack, i32 0, i32 " + to_string(offset));
-                } 
-                else if (amountOfCurrArgs >= 1 && offset <= -1) 
-                { 
-                    buffer.emit("%" + copyPtr + " = getelementptr [ " + to_string(amountOfCurrArgs) +" x i32], [ " +to_string(amountOfCurrArgs) + " x i32]* %args, i32 0, i32 "+ to_string(amountOfCurrArgs + offset));
-                } 
-                else 
+                    buffer.emit("%" + copyPtr + " = getelementptr [ 50 x i32], [ 50 x i32]* %stack, i32 0, i32 " + to_string(offset));
+                }
+                else if (amountOfCurrArgs >= 1 && offset <= -1)
+                {
+                    buffer.emit("%" + copyPtr + " = getelementptr [ " + to_string(amountOfCurrArgs) + " x i32], [ " + to_string(amountOfCurrArgs) + " x i32]* %args, i32 0, i32 " + to_string(amountOfCurrArgs + offset));
+                }
+                else
                 {
                     cout << "SHIIT" << endl;
                 }
                 buffer.emit("%" + reg_1 + "= load i32, i32* %" + copyPtr);
                 string id = getLLVMPrimitiveType(this->type);
                 this->reg = reg_1;
-                if (id != "i32") 
+                if (id != "i32")
                 {
                     this->reg = regsPool.get_reg();
                     buffer.emit("%" + this->reg + " = trunc i32 %" + reg_1 + " to " + id);
@@ -562,8 +561,8 @@ Exp::Exp(Exp *exp1, Exp *exp2, Exp *exp3)
     }
 
     if (exp3->type == "INT" && exp1->type == "BYTE" || exp1->type == "INT" && exp3->type == "BYTE")
-    {   
-        this->type="INT";
+    {
+        this->type = "INT";
         return;
     }
     else if (exp1->type != exp3->type)
@@ -571,12 +570,12 @@ Exp::Exp(Exp *exp1, Exp *exp2, Exp *exp3)
         output::errorMismatch(yylineno);
         exit(0);
     }
-    this->type=exp1->type;
+    this->type = exp1->type;
 }
 
 Exp::Exp(Exp *exp, std::string str)
 {
-    if (exp->type == "BOOL") 
+    if (exp->type == "BOOL")
     {
         this->value = exp->value;
         this->type = exp->type;
@@ -594,13 +593,13 @@ Exp::Exp(Exp *exp, std::string str)
     }
 }
 
-Node *doc_compare(Exp *left) 
+Node *doc_compare(Exp *left)
 {
     Node *temp = new P(left);
     return temp;
 }
 
-void if_bp(M *Label1, IfStart *if_start) 
+void if_bp(M *Label1, IfStart *if_start)
 {
     int res = buffer.emit("br label @");
     string genLabelRes = buffer.genLabel();
@@ -609,7 +608,8 @@ void if_bp(M *Label1, IfStart *if_start)
     buffer.bpatch(buffer.makelist({res, FIRST}), genLabelRes);
 }
 
-void if_else_bp(M *Label1, N *Label2, IfStart *if_start) {
+void if_else_bp(M *Label1, N *Label2, IfStart *if_start)
+{
     int res = buffer.emit("br label @");
     string genLabelRes = buffer.genLabel();
     buffer.bpatch(if_start->truelist, Label1->inst);
@@ -637,8 +637,8 @@ Call::Call(Node *id)
                 if (getLLVMPrimitiveType(this->value) == "void")
                 {
                     buffer.emit("call " + getLLVMPrimitiveType(this->value) + " @" + id->value + "()");
-                } 
-                else 
+                }
+                else
                 {
                     buffer.emit("%" + reg + " = call " + getLLVMPrimitiveType(this->value) + " @" + id->value + "()");
                 }
@@ -667,7 +667,7 @@ Call::Call(Node *id, ExpList *list)
                 output::errorUndefFunc(yylineno, id->value);
                 exit(0);
             }
-            string args="";
+            string args = "";
             if (i->types.size() == 1 + list->exp_list.size())
             {
                 for (int j = 0; j < list->exp_list.size(); j++)
@@ -693,8 +693,8 @@ Call::Call(Node *id, ExpList *list)
                 if (getLLVMPrimitiveType(this->value) == "void")
                 {
                     buffer.emit("call " + getLLVMPrimitiveType(this->value) + " @" + id->value + " (" + args);
-                } 
-                else 
+                }
+                else
                 {
                     buffer.emit("%" + reg + " = call " + getLLVMPrimitiveType(this->value) + " @" + id->value + " (" + args);
                 }
@@ -788,11 +788,17 @@ Statment::Statment(Exp *exp)
                 if (tablesStack[i]->lines[j]->types[size - 1] == ret_type)
                 {
                     data = exp->value;
+                    string LLVM_ret_type = getLLVMPrimitiveType(ret_type);
+                    buffer.emit("ret " + LLVM_ret_type + " %" + exp->reg);
                     return;
                 }
                 else if (ret_type == "BYTE" && tablesStack[i]->lines[j]->types[size - 1] == "INT")
                 {
                     data = exp->value;
+                    string data_reg = regsPool.get_reg();
+                    buffer.emit("%" + data_reg + " = zext i8 %" + exp->reg +
+                                " to i32");
+                    buffer.emit("ret i32 %" + data_reg);
                     return;
                 }
                 else
@@ -999,7 +1005,7 @@ Statment::Statment(Type *type, Node *id)
     buffer.emit("store i32 %" + date_reg + ", i32* %" + ptr);
 }
 FuncDecl::FuncDecl(RetType *ret_type, Node *id, Formals *formals)
-{   
+{
     if (idExists(id->value))
     {
         output::errorDef(yylineno, id->value);

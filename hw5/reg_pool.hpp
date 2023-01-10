@@ -6,6 +6,7 @@
 #include <string>
 class RegPool
 {
+public:
     unsigned int current;
     RegPool() : current(0){};
     string get_reg()
