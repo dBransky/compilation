@@ -42,7 +42,7 @@ continue                           yylval=new Node(yytext);   return CONTINUE;
 \*|\/							   yylval=new Node(yytext);   return MUL;
 [a-zA-Z][a-zA-Z0-9]*               yylval=new Node(yytext);   return ID;
 ({digit}({digit}|0)*)|0            yylval=new Node(yytext);   return NUM;
-(\")([^(\n)(\r)(\")(\\)]|(\))|(\()|(\\)[rnt(\")(\\)])+(\") {return STRING;};
+(\")([^(\n)(\r)(\")(\\)]|(\))|(\()|(\\)[rnt(\")(\\)])+(\") {yylval=new Node(yytext); return STRING;};
 {whitespace}				                  ;
 \/\/[^\r\n]*[\r|\n|\r\n|\n\r]?        ;
 .                                     {output::errorLex(yylineno); exit(0);};

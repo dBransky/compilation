@@ -457,8 +457,8 @@ Exp::Exp(Node *term, std::string str) : Node(term->value)
         int termSize = term->value.size();
         int lastPlace = termSize - 1;
         term->value[lastPlace] = '\00';
-        buffer.emitGlobal("@" + this->reg + "= constant [" + to_string(termSize) + " x i8] c\"" + term->value + "\"");
-        buffer.emit("%" + this->reg + "= getelementptr [" + to_string(termSize) + " x i8], [" + to_string(termSize) + " x i8]* @" + this->reg + ", i8 0, i8 0");
+        buffer.emitGlobal("@" + this->reg + "= constant [" + to_string(termSize-1) + " x i8] c" + term->value + "\"");
+        buffer.emit("%" + this->reg + "= getelementptr [" + to_string(termSize-1) + " x i8], [" + to_string(termSize-1) + " x i8]* @" + this->reg + ", i8 0, i8 0");
     }
     if (str == "BOOL")
     {
@@ -690,13 +690,13 @@ Call::Call(Node *id, ExpList *list)
                 args.back() = ')';
                 this->value = i->types.back();
                 this->reg = regsPool.get_reg();
-                if (getLLVMPrimitiveType(this->value) == "VOID")
+                if (getLLVMPrimitiveType(this->value) == "void")
                 {
-                    buffer.emit("call " + getLLVMPrimitiveType(this->value) + " @" + id->value + " " + args);
+                    buffer.emit("call " + getLLVMPrimitiveType(this->value) + " @" + id->value + " (" + args);
                 } 
                 else 
                 {
-                    buffer.emit("%" + reg + " = call " + getLLVMPrimitiveType(this->value) + " @" + id->value + " " + args);
+                    buffer.emit("%" + reg + " = call " + getLLVMPrimitiveType(this->value) + " @" + id->value + " (" + args);
                 }
                 int refLoc = buffer.emit("br label @");
                 this->inst = buffer.genLabel();
