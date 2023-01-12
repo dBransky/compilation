@@ -84,7 +84,7 @@ void outLoop(N *first_l, P *second_l, Statment *statement)
     buffer.bpatch(buffer.makelist({first_l->location, FIRST}), first_l->inst);
     buffer.bpatch(buffer.makelist({second_l->location, FIRST}), second_l->inst);
     buffer.bpatch(buffer.makelist({second_l->location, SECOND}), genLabelStr);
-    buffer.bpatch(buffer.makelist({labelLoc, FIRST}), second_l->inst);
+    buffer.bpatch(buffer.makelist({labelLoc, FIRST}), first_l->inst);
     int breakListSize = statement->break_list.size();
     int continuteListSize = statement->continue_list.size();
     if (breakListSize != 0)
@@ -227,7 +227,7 @@ Exp::Exp(Exp *left, Node *op, Exp *right, string str, P *shortC)
 {
     this->type = "";
     this->reg = regsPool.get_reg();
-    string end = "";
+    string endLabel = "";
     vector<pair<int, BranchLabelIndex>> listFalse;
     this->falselist = listFalse;
     vector<pair<int, BranchLabelIndex>> listTrue;
@@ -301,11 +301,11 @@ Exp::Exp(Exp *left, Node *op, Exp *right, string str, P *shortC)
             buffer.emit("%" + this->reg + " = icmp " + relop + " " + iSize + " %" + leftReg + ", %" + rightLeft);
             if (right->inst != "")
             {
-                end = right->inst;
+                endLabel = right->inst;
             }
             else
             {
-                end = left->inst;
+                endLabel = left->inst;
             }
         }
         if (str == "ADD" || str == "MUL")
@@ -360,7 +360,7 @@ Exp::Exp(Exp *left, Node *op, Exp *right, string str, P *shortC)
                 buffer.bpatch(buffer.makelist({second_emit, FIRST}), second_label);
                 iSize = "i32";
                 oper = "sdiv";
-                end = second_label;
+                endLabel = second_label;
             }
             if (iSize == "i32")
             {
@@ -402,7 +402,7 @@ Exp::Exp(Exp *left, Node *op, Exp *right, string str, P *shortC)
                 int loc_bef = buffer.emit("br label @");
                 string leftFalseLabel = buffer.genLabel();
                 int loc_aft = buffer.emit("br label @");
-                string endLabel = buffer.genLabel();
+                endLabel = buffer.genLabel();
                 buffer.emit("%" + this->reg + " = phi i1 [%" + right->reg + ", %" + this->inst + "],[0, %" + leftFalseLabel + "]");
                 buffer.bpatch(buffer.makelist({shortC->location, FIRST}), shortC->inst);
                 buffer.bpatch(buffer.makelist({shortC->location, SECOND}), leftFalseLabel);
@@ -414,7 +414,7 @@ Exp::Exp(Exp *left, Node *op, Exp *right, string str, P *shortC)
                 int loc_bef = buffer.emit("br label @");
                 string leftTrueLabel = buffer.genLabel();
                 int loc_aft = buffer.emit("br label @");
-                string endLabel = buffer.genLabel();
+                endLabel = buffer.genLabel();
                 buffer.emit("%" + this->reg + " = phi i1 [%" + right->reg + ", %" + this->inst + "],[1, %" + leftTrueLabel + "]");
                 buffer.bpatch(buffer.makelist({shortC->location, FIRST}), leftTrueLabel);
                 buffer.bpatch(buffer.makelist({shortC->location, SECOND}), shortC->inst);
@@ -433,9 +433,9 @@ Exp::Exp(Exp *left, Node *op, Exp *right, string str, P *shortC)
         output::errorMismatch(yylineno);
         exit(0);
     }
-    if (end != "")
+    if (endLabel != "")
     {
-        this->inst = end;
+        this->inst = endLabel;
     }
 }
 
