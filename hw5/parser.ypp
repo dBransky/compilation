@@ -33,7 +33,7 @@
 %left OR;
 %left AND;
 %left RELOPL;
-%right ADD;
+%left ADD;
 %left MUL;
 %right NOT;
 %left LBRACE;
@@ -63,8 +63,8 @@ Statment : 		 LBRACE OS Statments CS RBRACE {$$= new Statment (dynamic_cast<Stat
 								 | Call SC {$$= new Statment (dynamic_cast<Call*> ($1));}
 								 | RETURN SC {$$= new Statment ("VOID");}
 								 | RETURN Exp SC {$$= new Statment (dynamic_cast<Exp*> ($2));}
-								 | IfStart M Statment %prec XX {$$= new Statment (dynamic_cast<IfStart*>($1));closeScope(); if_bp(dynamic_cast<M*>($2),dynamic_cast<IfStart*>($1));}  
-								 | IfStart M Statment ELSE {$$= new Statment (dynamic_cast<IfStart*>($1));closeScope();}  OS N Statment CS {if_else_bp(dynamic_cast<M*>($2),dynamic_cast<N*>($7),dynamic_cast<IfStart*>($1));$$=add_else_statment(dynamic_cast<Statment*>($5),dynamic_cast<Statment*>($8));}
+								 | IfStart M Statment %prec XX {$$= new Statment (dynamic_cast<IfStart*>($1),dynamic_cast<Statment*>($3));closeScope(); if_bp(dynamic_cast<M*>($2),dynamic_cast<IfStart*>($1));}  
+								 | IfStart M Statment ELSE {$$= new Statment (dynamic_cast<IfStart*>($1),dynamic_cast<Statment*>($3));closeScope();}  OS N Statment CS {if_else_bp(dynamic_cast<M*>($2),dynamic_cast<N*>($7),dynamic_cast<IfStart*>($1));$$=add_else_statment(dynamic_cast<Statment*>($5),dynamic_cast<Statment*>($8));}
 								 | WHILE LPAREN N Exp RPAREN {$$= doc_compare(dynamic_cast<Exp*> ($4));}{$$= new Statment ("while", dynamic_cast<Exp*> ($4));inLoop();} OS Statment CS { outLoop(dynamic_cast<N*> ($3),dynamic_cast<P*> ($6),dynamic_cast<Statment*> ($9));$$=$7;}
 								 | BREAK SC {$$= new Statment ($1);}
 								 | CONTINUE SC {$$= new Statment ($1);};

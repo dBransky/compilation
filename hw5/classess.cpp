@@ -820,7 +820,7 @@ Statments::Statments(Statment *statment)
 Statments::Statments(Statments *statments, Statment *statment)
 {
     this->break_list = buffer.merge(statments->break_list, statment->break_list);
-    this->continue_list = buffer.merge(statments->continue_list, statment->break_list);
+    this->continue_list = buffer.merge(statments->continue_list, statment->continue_list);
 }
 string emitting(string data, string type, int offset)
 {

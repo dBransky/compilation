@@ -206,7 +206,7 @@ public:
     std::string data;
     vector<pair<int, BranchLabelIndex>> truelist;
     vector<pair<int, BranchLabelIndex>> falselist;
-    IfStart(std::string str, Exp *exp)
+    IfStart(std::string str, Exp *exp,Statment *statment=nullptr)
     {
         this->truelist=exp->truelist;
         this->falselist=exp->falselist;
@@ -267,9 +267,11 @@ public:
             this->break_list=statment->break_list;
         }
     }
-    Statment(IfStart *if_start)
+    Statment(IfStart *if_start,Statment* statment)
     {
         this->data = "if/else";
+        this->break_list=statment->break_list;
+        this->continue_list=statment->continue_list;
     }
 };
 class Call : public Node
